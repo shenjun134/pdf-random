@@ -176,11 +176,12 @@ public class PdfTestPage_1 {
         Image img3 = Image.getInstance(tablePath.toAbsolutePath().toString());
         img3.scalePercent(100);
         img3.setRotationDegrees(alpha);
-        float x = img3.getPlainWidth();
-        float y = img3.getPlainHeight();
 
         float xBegin = RandomUtil.randomInt(Constant.xBeginMax, Constant.xBeginMin);
         float yBegin = RandomUtil.randomInt(Constant.yBeginMax, Constant.yBeginMin);
+
+        float xMin = xBegin;
+        float yMin = defaultHeight - yBegin - img3.getPlainHeight();
 
 
         String json = FileUtils.readFileToString(structurePath.toFile());
@@ -190,7 +191,7 @@ public class PdfTestPage_1 {
         scanResult.setFilename(imgFile);
         scanResult.setFolder("VOC2007");
 
-        String xmlOut = VOUtil.mergeResult(json, xBegin, yBegin, scanResult);
+        String xmlOut = VOUtil.mergeResult(json, xMin, yMin, scanResult);
         FileUtils.writeStringToFile(new File(targetXMl), xmlOut);
 
 

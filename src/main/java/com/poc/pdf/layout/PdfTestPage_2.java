@@ -292,12 +292,15 @@ public class PdfTestPage_2 {
         float xBegin = RandomUtil.randomInt(Constant.xBeginMax, Constant.xBeginMin);
         float yBegin = RandomUtil.randomInt(Constant.yBeginMax, Constant.yBeginMin);
 
+        float xMin = xBegin;
+        float yMin = defaultHeight - yBegin - img3.getPlainHeight();
+
         String json = FileUtils.readFileToString(structurePath.toFile());
 
         scanResult.setOwner(owner);
         scanResult.setFilename(imgFile);
         scanResult.setFolder("VOC2007");
-        String xmlOut = VOUtil.mergeResult(json, xBegin, yBegin, scanResult);
+        String xmlOut = VOUtil.mergeResult(json, xMin, yMin, scanResult);
         FileUtils.writeStringToFile(new File(targetXMl), xmlOut);
 
         //max x, y 220f, 170f

@@ -10,22 +10,32 @@ public class Base {
 
     public static void main(String[] args) throws Exception {
         int count = Constant.defCount;
+        int beginAt = Constant.defBeginAt;
         if (args != null && args.length > 0) {
             count = NumberUtils.toInt(args[0], Constant.defCount);
         }
-        process(count);
+        if (args != null && args.length > 1) {
+            beginAt = NumberUtils.toInt(args[1], Constant.defBeginAt);
+        }
+        if (beginAt > Constant.defMaxBegin) {
+            beginAt = Constant.defMaxBegin;
+        } else if (beginAt < 0) {
+            beginAt = 0;
+        }
+
+        process(count, beginAt);
     }
 
-    public static void process(int count) {
+    public static void process(int count, int beginAt) {
         Long startAt = System.currentTimeMillis();
         try {
-            Table2Image_1.process2(0, count);
-            Table2Image_2.process2(count, 2 * count);
+            Table2Image_1.process2(beginAt, count + beginAt);
+            Table2Image_2.process2(count + beginAt, 2 * count + beginAt);
 
             System.out.println("################# random table completed!!!");
 
-            PdfTestPage_1.process2(0, count);
-            PdfTestPage_2.process2(count, 2 * count);
+            PdfTestPage_1.process2(beginAt, count + beginAt);
+            PdfTestPage_2.process2(count + beginAt, 2 * count + beginAt);
         } catch (Exception e) {
             System.out.println("process error ...");
             e.printStackTrace();
@@ -38,5 +48,9 @@ public class Base {
 
     interface Constant {
         int defCount = 5;
+
+        int defBeginAt = 100000;
+
+        int defMaxBegin = 990000;
     }
 }

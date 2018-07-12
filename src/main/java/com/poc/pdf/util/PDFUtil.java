@@ -298,8 +298,8 @@ public class PDFUtil {
         float totalHeight = table.getTotalHeight();
         float totalWidth = table.getTotalWidth();
         TableStructureVO tableStructureVO = new TableStructureVO(totalHeight, totalWidth);
-        tableStructureVO.setColWidth(absHeight);
-        tableStructureVO.setRowheight(absWidth);
+        tableStructureVO.setColWidth(absWidth);
+        tableStructureVO.setRowheight(absHeight);
         return tableStructureVO;
     }
 
