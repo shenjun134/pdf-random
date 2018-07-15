@@ -15,15 +15,15 @@ public class BoxVO extends ToString {
 
 
     public static BoxVO newTABLE() {
-        return new BoxVO("TABLE");
+        return new BoxVO("table");
     }
 
     public static BoxVO newTH() {
-        return new BoxVO("TH");
+        return new BoxVO("th");
     }
 
     public static BoxVO newTD() {
-        return new BoxVO("TD");
+        return new BoxVO("td");
     }
 
     public BoxVO() {

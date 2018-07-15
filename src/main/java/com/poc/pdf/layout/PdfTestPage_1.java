@@ -220,10 +220,10 @@ public class PdfTestPage_1 {
 
 
     interface Constant {
-        int xBeginMin = 10;
-        int xBeginMax = 220;
+        int xBeginMin = 30;
+        int xBeginMax = 180;
 
-        int yBeginMin = 100;
+        int yBeginMin = 120;
         int yBeginMax = 170;
     }
 

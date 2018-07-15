@@ -7,45 +7,45 @@ public class AreaVO extends ToString {
 
     private static final long serialVersionUID = 5674683597153092355L;
 
-    private float xmin;
-    private float ymin;
+    private int xmin;
+    private int ymin;
 
-    private float xmax;
-    private float ymax;
+    private int xmax;
+    private int ymax;
 
-    public float getXmin() {
+    public int getXmin() {
         return xmin;
     }
 
     public AreaVO setXmin(float xmin) {
-        this.xmin = xmin;
+        this.xmin = (int) xmin;
         return this;
     }
 
-    public float getYmin() {
+    public int getYmin() {
         return ymin;
     }
 
     public AreaVO setYmin(float ymin) {
-        this.ymin = ymin;
+        this.ymin = (int) ymin;
         return this;
     }
 
-    public float getXmax() {
+    public int getXmax() {
         return xmax;
     }
 
     public AreaVO setXmax(float xmax) {
-        this.xmax = xmax;
+        this.xmax = (int) xmax;
         return this;
     }
 
-    public float getYmax() {
+    public int getYmax() {
         return ymax;
     }
 
     public AreaVO setYmax(float ymax) {
-        this.ymax = ymax;
+        this.ymax = (int) ymax;
         return this;
     }
 }

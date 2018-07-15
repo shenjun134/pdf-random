@@ -154,7 +154,7 @@ public class VOUtil {
     public static String mergeResult(String json, float xmin, float ymin, ScanResult scanResult) {
         String objectXml = json2Xml(json, xmin, ymin);
         String endFix = "</annotation>";
-        String resultXml = RandomUtil.toXmlWithHead(scanResult);
+        String resultXml = RandomUtil.toXml(scanResult);
         resultXml = StringUtils.replace(resultXml, endFix, "");
         resultXml = resultXml + objectXml + "" + endFix;
 
@@ -181,7 +181,7 @@ public class VOUtil {
         scanResult.setOwner("HengTian");
 
         String endFix = "</annotation>";
-        String resultXml = RandomUtil.toXmlWithHead(scanResult);
+        String resultXml = RandomUtil.toXml(scanResult);
         resultXml = StringUtils.replace(resultXml, endFix, "");
 
         resultXml = resultXml + objectXml + "" + endFix;

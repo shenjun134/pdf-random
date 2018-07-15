@@ -268,7 +268,8 @@ public class RandomUtil {
         Class<?> clazz = instance.getClass();
         XStream xstream = new XStream(new DomDriver());
         xstream.processAnnotations(clazz);
-        return new StringBuilder().append("<?xml version=\"1.0\"?>\n").append(xstream.toXML(instance)).toString();
+//        return new StringBuilder().append("<?xml version=\"1.0\"?>\n").append(xstream.toXML(instance)).toString();
+        return xstream.toXML(instance);
     }
 
     public static void main(String[] args) {

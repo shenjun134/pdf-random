@@ -40,14 +40,14 @@ public class Base {
             System.out.println("process error ...");
             e.printStackTrace();
         } finally {
-            System.out.println("**************** Layout-1 begin:" + 0 + " end:" + (count - 1));
-            System.out.println("**************** Layout-2 begin:" + count + " end:" + (2 * count - 1));
+            System.out.println("**************** Layout-1 begin:" + beginAt + " end:" + (count - 1 + beginAt));
+            System.out.println("**************** Layout-2 begin:" + (count + beginAt) + " end:" + (2 * count - 1 + beginAt));
             System.out.println("**************** Total used:" + (System.currentTimeMillis() - startAt));
         }
     }
 
     interface Constant {
-        int defCount = 5;
+        int defCount = 200;
 
         int defBeginAt = 100000;
 

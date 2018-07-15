@@ -21,8 +21,8 @@ public class ScanResult extends ToString {
 
 
     public ScanResult(float width, float height) {
-        this.boxSize.setWidth(width);
-        this.boxSize.setHeight(height);
+        this.boxSize.setWidth((int)width);
+        this.boxSize.setHeight((int)height);
     }
 
 

@@ -117,6 +117,11 @@ public class Table2Image_2 {
             totalHeight = table.getTotalHeight();
             totalWidth = table.getTotalWidth();
 
+            double maxWidth_ = 0.85 *defaultWidth;
+            if(maxWidth_ < totalWidth){
+                System.out.println(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " + index);
+            }
+
             TableStructureVO tableStructureVO = PDFUtil.toStruction(table, tableVO);
 
             FileUtil.write(VOUtil.tableStructionVO2Str(tableStructureVO), tableStructureText);
@@ -183,8 +188,8 @@ public class Table2Image_2 {
 
     private static TableVO randomTV() {
         List<RowVO> bodyList = new ArrayList<>();
-        int maxRow = 19;
-        int minRow = 15;
+        int maxRow = 15;
+        int minRow = 12;
         int length = (int) (Math.random() * 100d % maxRow);
         if (length < minRow && length > 0) {
             length = minRow;
@@ -245,7 +250,7 @@ public class Table2Image_2 {
         PdfPTable table = new PdfPTable(columnWidths);
         table.setRunDirection(1);
         table.setHorizontalAlignment(0);
-        table.setWidthPercentage(RandomUtil.randomInt(90, 80));
+        table.setWidthPercentage(RandomUtil.randomInt(83, 78));
         table.getDefaultCell().setUseAscender(true);
         table.getDefaultCell().setUseDescender(true);
 

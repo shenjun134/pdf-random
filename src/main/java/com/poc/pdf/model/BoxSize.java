@@ -7,33 +7,33 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
 public class BoxSize extends ToString {
     private static final long serialVersionUID = 348369956801601682L;
 
-    private float width;
+    private int width;
 
-    private float height;
+    private int height;
 
-    private float depth;
+    private int depth = 3;
 
-    public float getWidth() {
+    public int getWidth() {
         return width;
     }
 
-    public void setWidth(float width) {
+    public void setWidth(int width) {
         this.width = width;
     }
 
-    public float getHeight() {
+    public int getHeight() {
         return height;
     }
 
-    public void setHeight(float height) {
+    public void setHeight(int height) {
         this.height = height;
     }
 
-    public float getDepth() {
+    public int getDepth() {
         return depth;
     }
 
-    public void setDepth(float depth) {
+    public void setDepth(int depth) {
         this.depth = depth;
     }
 }
