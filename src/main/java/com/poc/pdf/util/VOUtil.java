@@ -9,6 +9,14 @@ public class VOUtil {
 
     private static Gson gson = new GsonBuilder().create();
 
+    private static int defOffsiteMinX = 1;
+
+    private static int defOffsiteMinY = 1;
+
+    private static int defOffsiteMaxX = 1;
+
+    private static int defOffsiteMaxY = 1;
+
     public static String tableVO2Str(TableVO tableVO) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(rowVO2Str(tableVO.getHeader()));
@@ -75,10 +83,10 @@ public class VOUtil {
     public static BoxVO thBoxVO(int col, float xBegin, float yBegin, TableStructureVO tableStructureVO) {
         BoxVO boxVO = BoxVO.newTH();
         int row = 0;
-        float xmax = getWidth(col + 1, tableStructureVO);
-        float ymax = getHeight(row + 1, tableStructureVO);
-        float xmin = getWidth(col, tableStructureVO);
-        float ymin = getHeight(row, tableStructureVO);
+        float xmax = getWidth(col + 1, tableStructureVO) - defOffsiteMaxX;
+        float ymax = getHeight(row + 1, tableStructureVO) - defOffsiteMaxY;
+        float xmin = getWidth(col, tableStructureVO) + defOffsiteMinX;
+        float ymin = getHeight(row, tableStructureVO) + defOffsiteMinX;
 
         AreaVO areaVO = new AreaVO();
         areaVO.setXmax(xmax + xBegin);
@@ -93,10 +101,10 @@ public class VOUtil {
     public static BoxVO tdBoxVO(int row, int col, float xBegin, float yBegin, TableStructureVO tableStructureVO) {
         BoxVO boxVO = BoxVO.newTD();
         row = row + 1;
-        float xmax = getWidth(col + 1, tableStructureVO);
-        float ymax = getHeight(row + 1, tableStructureVO);
-        float xmin = getWidth(col, tableStructureVO);
-        float ymin = getHeight(row, tableStructureVO);
+        float xmax = getWidth(col + 1, tableStructureVO) - defOffsiteMaxX;
+        float ymax = getHeight(row + 1, tableStructureVO) - defOffsiteMaxY;
+        float xmin = getWidth(col, tableStructureVO) + defOffsiteMinX;
+        float ymin = getHeight(row, tableStructureVO) + defOffsiteMinY;
 
         AreaVO areaVO = new AreaVO();
         areaVO.setXmax(xmax + xBegin);
@@ -189,5 +197,38 @@ public class VOUtil {
         System.out.println(resultXml);
 
     }
+
+    public static void setDefOffsiteMinX(int defOffsiteMinX) {
+        VOUtil.defOffsiteMinX = defOffsiteMinX;
+    }
+
+    public static void setDefOffsiteMinY(int defOffsiteMinY) {
+        VOUtil.defOffsiteMinY = defOffsiteMinY;
+    }
+
+    public static void setDefOffsiteMaxX(int defOffsiteMaxX) {
+        VOUtil.defOffsiteMaxX = defOffsiteMaxX;
+    }
+
+    public static void setDefOffsiteMaxY(int defOffsiteMaxY) {
+        VOUtil.defOffsiteMaxY = defOffsiteMaxY;
+    }
+
+    public static int getDefOffsiteMinX() {
+        return defOffsiteMinX;
+    }
+
+    public static int getDefOffsiteMinY() {
+        return defOffsiteMinY;
+    }
+
+    public static int getDefOffsiteMaxX() {
+        return defOffsiteMaxX;
+    }
+
+    public static int getDefOffsiteMaxY() {
+        return defOffsiteMaxY;
+    }
+
 
 }

@@ -4,6 +4,7 @@ import com.poc.pdf.layout.PdfTestPage_1;
 import com.poc.pdf.layout.PdfTestPage_2;
 import com.poc.pdf.table.Table2Image_1;
 import com.poc.pdf.table.Table2Image_2;
+import com.poc.pdf.util.VOUtil;
 import org.apache.commons.lang.math.NumberUtils;
 
 public class Base {
@@ -22,6 +23,31 @@ public class Base {
         } else if (beginAt < 0) {
             beginAt = 0;
         }
+
+        if (args != null && args.length > 2) {
+            int defOffsiteMinX = NumberUtils.toInt(args[2], Constant.defOffsiteMinX);
+            VOUtil.setDefOffsiteMinX(defOffsiteMinX);
+        }
+
+        if (args != null && args.length > 3) {
+            int defOffsiteMinY = NumberUtils.toInt(args[3], Constant.defOffsiteMinY);
+            VOUtil.setDefOffsiteMinY(defOffsiteMinY);
+        }
+
+        if (args != null && args.length > 4) {
+            int defOffsiteMaxX = NumberUtils.toInt(args[4], Constant.defOffsiteMaxX);
+            VOUtil.setDefOffsiteMaxX(defOffsiteMaxX);
+        }
+
+        if (args != null && args.length > 5) {
+            int defOffsiteMaxY = NumberUtils.toInt(args[5], Constant.defOffsiteMaxY);
+            VOUtil.setDefOffsiteMaxY(defOffsiteMaxY);
+        }
+
+        System.out.println("VO Util.defOffsiteMinX:" + VOUtil.getDefOffsiteMinX());
+        System.out.println("VO Util.defOffsiteMinY:" + VOUtil.getDefOffsiteMinY());
+        System.out.println("VO Util.defOffsiteMaxX:" + VOUtil.getDefOffsiteMaxX());
+        System.out.println("VO Util.defOffsiteMaxY:" + VOUtil.getDefOffsiteMaxY());
 
         process(count, beginAt);
     }
@@ -47,10 +73,18 @@ public class Base {
     }
 
     interface Constant {
-        int defCount = 200;
+        int defCount = 2;
 
         int defBeginAt = 100000;
 
         int defMaxBegin = 990000;
+
+        int defOffsiteMinX = 1;
+
+        int defOffsiteMinY = 1;
+
+        int defOffsiteMaxX = 1;
+
+        int defOffsiteMaxY = 1;
     }
 }
