@@ -1,5 +1,7 @@
 package com.poc.pdf.model;
 
+import java.util.List;
+
 public class Rectangle {
 
     private Point point1;
@@ -7,6 +9,8 @@ public class Rectangle {
     private Point point2;
 
     private boolean isSplit;
+
+    private List<String> text;
 
     public Point getPoint1() {
         return point1;
@@ -40,12 +44,36 @@ public class Rectangle {
         isSplit = split;
     }
 
+    public Point getReal1(GridLayoutConfig config) {
+        return getReal(config, point1);
+    }
+
+    public Point getReal2(GridLayoutConfig config) {
+        return getReal(config, point2);
+    }
+
+    public Point getReal(GridLayoutConfig config, Point point) {
+        int x = point.getX();
+        int y = config.getTotalHeight() - point.getY();
+//        int y = point.getY();
+        return new Point(x, y);
+    }
+
+    public List<String> getText() {
+        return text;
+    }
+
+    public void setText(List<String> text) {
+        this.text = text;
+    }
+
     @Override
     public String toString() {
         return "Rectangle{" +
                 "point1=" + point1 +
                 ", point2=" + point2 +
                 ", isSplit=" + isSplit +
+                ", text=" + text +
                 '}';
     }
 }
