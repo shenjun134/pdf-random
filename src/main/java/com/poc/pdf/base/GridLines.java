@@ -18,11 +18,21 @@ import org.apache.commons.lang.RandomStringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class GridLines {
 
     public static final String DEST = "./grid_lines2.pdf";
+
+
+    interface Const {
+        int baseFont = 16;
+        int unitCharLength = 10;
+        int unitCharHeight = 16;
+        int offsiteX = 6;
+        int offsiteY = 8;
+    }
 
     public static void main(String args[]) throws IOException {
         File file = new File(DEST);
@@ -77,40 +87,10 @@ public class GridLines {
 
         //make noise
 
-        //Bottom noise
-        int fontSize = 26;
-        float leadingSize = 1.2f * fontSize;
-        int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
-        String bottomText = randomText(gridWidth, fontSize);
-        String fontFamily = fontProgram();
-        int bottomX = config.getPaddingLeft() - padding;
-        int bottomY = 2 * fontSize;
-        canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
-                .setLeading(leadingSize)
-                .moveText(bottomX, bottomY);
-        canvas.newlineShowText(bottomText);
-        canvas.endText();
-
-
-        //Top noise
-
-        int fontSizeTop = 60;
-        float leadingSizeTop = 1.2f * fontSizeTop;
-        String header = randomText(gridWidth / 3, fontSizeTop).toUpperCase();
-        String header2 = randomText(gridWidth / 2, fontSizeTop).toUpperCase();
-        String header3 = randomText(gridWidth / 1, fontSizeTop).toUpperCase();
-        String fontFamilyTop = FontConstants.HELVETICA_BOLD;
-        int topX = config.getPaddingLeft() + 2 * padding;
-        int topY = config.getTotalHeight() - padding;
-        canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamilyTop), fontSizeTop)
-                .setLeading(leadingSizeTop)
-                .moveText(topX, topY);
-        canvas.newlineShowText(header);
-        canvas.newlineShowText(header2);
-        canvas.newlineShowText(header3);
-        canvas.endText();
+        makeNoiseTop(config, padding, canvas);
+        makeNoiseBottom(config, padding, canvas);
+        makeNoiseLeft(config, padding, canvas);
+        makeNoiseRight(config, padding, canvas);
 
 
         //Close document
@@ -125,9 +105,9 @@ public class GridLines {
     }
 
     private static List<String> randomString(com.poc.pdf.model.Rectangle rectangle, int fontSize) {
-        int baseFont = 14;
-        int unitCharLength = 16;
-        int offsite = 8;
+        int baseFont = Const.baseFont;
+        int unitCharLength = Const.unitCharHeight;
+        int offsite = Const.offsiteY;
 
         int height = rectangle.height();
         int row = height / (unitCharLength * fontSize / baseFont) - offsite;
@@ -142,9 +122,9 @@ public class GridLines {
     }
 
     private static String randomText(int width, int fontSize) {
-        int baseFont = 14;
-        int unitCharLength = 9;
-        int offsite = 6;
+        int baseFont = Const.baseFont;
+        int unitCharLength = Const.unitCharLength;
+        int offsite = Const.offsiteX;
 
         int count = width / (unitCharLength * fontSize / baseFont) - offsite;
         if (count < 3) {
@@ -156,6 +136,84 @@ public class GridLines {
         return RandomStringUtils.random(count, range);
     }
 
+
+    private static void makeNoiseBottom(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
+        int fontSize = 26;
+        float leadingSize = 1.2f * fontSize;
+        int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
+        String bottomText = randomText(gridWidth, fontSize);
+        String fontFamily = fontProgram();
+        int bottomX = config.getPaddingLeft() - padding;
+        int bottomY = 2 * fontSize;
+        canvas.beginText()
+                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setLeading(leadingSize)
+                .moveText(bottomX, bottomY);
+        canvas.newlineShowText(bottomText);
+        canvas.endText();
+    }
+
+    private static void makeNoiseTop(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
+        int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
+        int fontSizeTop = 60;
+        float leadingSizeTop = 1.2f * fontSizeTop;
+        String header = randomText(gridWidth / 4, fontSizeTop).toUpperCase() + " ---- " + new Date();
+        String header2 = randomText(gridWidth / 2, fontSizeTop).toUpperCase();
+        String header3 = randomText(gridWidth / 1, fontSizeTop).toUpperCase();
+        String fontFamilyTop = FontConstants.HELVETICA_BOLD;
+        int topX = config.getPaddingLeft() + 2 * padding;
+        int topY = config.getTotalHeight() - padding;
+        canvas.beginText()
+                .setFontAndSize(PdfFontFactory.createFont(fontFamilyTop), fontSizeTop)
+                .setLeading(leadingSizeTop)
+                .moveText(topX, topY);
+        canvas.newlineShowText(header);
+        canvas.newlineShowText(header2);
+        canvas.newlineShowText(header3);
+        canvas.endText();
+    }
+
+    private static void makeNoiseLeft(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
+        int fontSize = 26;
+        float leadingSize = 1.2f * fontSize;
+        int gridWidth = config.getTotalHeight() - config.getPaddingTop() - config.getPaddingBottom();
+        String leftText = randomText((int) (gridWidth / 1.5f), fontSize);
+        String fontFamily = fontProgram();
+        int leftX = 1 * fontSize;
+        int leftY = config.getTotalHeight() - 2 * padding;
+        canvas.beginText()
+                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setTextRenderingMode(1)
+                .setLeading(leadingSize)
+                .moveText(leftX, leftY);
+        int size = leftText.length();
+        for (int i = 0; i < size; i++) {
+            canvas.newlineShowText("" + leftText.charAt(i));
+
+        }
+        canvas.endText();
+    }
+
+    private static void makeNoiseRight(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
+        int fontSize = 26;
+        float leadingSize = 1.2f * fontSize;
+        int gridWidth = config.getTotalHeight() - config.getPaddingTop() - config.getPaddingBottom();
+        String leftText = randomText((int) (gridWidth / 1.5f), fontSize);
+        String fontFamily = fontProgram();
+        int leftX = config.getTotalWidth() - 2 * fontSize;
+        int leftY = config.getTotalHeight() - 2 * padding;
+        canvas.beginText()
+                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setTextRenderingMode(1)
+                .setLeading(leadingSize)
+                .moveText(leftX, leftY);
+        int size = leftText.length();
+        for (int i = 0; i < size; i++) {
+            canvas.newlineShowText("" + leftText.charAt(i));
+
+        }
+        canvas.endText();
+    }
 
     private static int fontSize() {
         double rd = Math.random() * 1000;
