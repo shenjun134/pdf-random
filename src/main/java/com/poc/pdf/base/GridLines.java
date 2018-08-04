@@ -8,11 +8,6 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.lowagie.text.Element;
-import com.lowagie.text.Phrase;
-import com.lowagie.text.pdf.ColumnText;
-import com.lowagie.text.pdf.PdfContentByte;
-import com.lowagie.text.pdf.PdfLayer;
 import com.poc.pdf.model.GridLayoutConfig;
 import com.poc.pdf.model.GridLayoutResult;
 import com.poc.pdf.model.Line;
@@ -72,7 +67,7 @@ public class GridLines {
                     .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
                     .setLeading(leadingSize)
                     .moveText(x, y);
-            for(String text : textList){
+            for (String text : textList) {
                 canvas.newlineShowText(text);
             }
             canvas.endText();
@@ -81,6 +76,41 @@ public class GridLines {
         }
 
         //make noise
+
+        //Bottom noise
+        int fontSize = 26;
+        float leadingSize = 1.2f * fontSize;
+        int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
+        String bottomText = randomText(gridWidth, fontSize);
+        String fontFamily = fontProgram();
+        int bottomX = config.getPaddingLeft() - padding;
+        int bottomY = 2 * fontSize;
+        canvas.beginText()
+                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setLeading(leadingSize)
+                .moveText(bottomX, bottomY);
+        canvas.newlineShowText(bottomText);
+        canvas.endText();
+
+
+        //Top noise
+
+        int fontSizeTop = 60;
+        float leadingSizeTop = 1.2f * fontSizeTop;
+        String header = randomText(gridWidth / 3, fontSizeTop).toUpperCase();
+        String header2 = randomText(gridWidth / 2, fontSizeTop).toUpperCase();
+        String header3 = randomText(gridWidth / 1, fontSizeTop).toUpperCase();
+        String fontFamilyTop = FontConstants.HELVETICA_BOLD;
+        int topX = config.getPaddingLeft() + 2 * padding;
+        int topY = config.getTotalHeight() - padding;
+        canvas.beginText()
+                .setFontAndSize(PdfFontFactory.createFont(fontFamilyTop), fontSizeTop)
+                .setLeading(leadingSizeTop)
+                .moveText(topX, topY);
+        canvas.newlineShowText(header);
+        canvas.newlineShowText(header2);
+        canvas.newlineShowText(header3);
+        canvas.endText();
 
 
         //Close document
@@ -105,13 +135,13 @@ public class GridLines {
             row = 1;
         }
         List<String> list = new ArrayList<>(row);
-        for(int i = 0 ; i<row;i++){
+        for (int i = 0; i < row; i++) {
             list.add(randomText(rectangle.width(), fontSize));
         }
         return list;
     }
 
-    private static String randomText(int width, int fontSize){
+    private static String randomText(int width, int fontSize) {
         int baseFont = 14;
         int unitCharLength = 9;
         int offsite = 6;
@@ -125,8 +155,6 @@ public class GridLines {
 
         return RandomStringUtils.random(count, range);
     }
-
-
 
 
     private static int fontSize() {
