@@ -5,6 +5,8 @@ import com.itextpdf.kernel.color.DeviceRgb;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class GridLayoutConfig {
@@ -19,6 +21,8 @@ public class GridLayoutConfig {
         int rectMinSize = 200;
 
         int defPadding = 50;
+
+        int shock = 0;
     }
 
     private int totalWidth;
@@ -53,6 +57,14 @@ public class GridLayoutConfig {
     private int blankProbability;
 
     private int splitProbability;
+
+    private int shockSize;
+
+    private int numberOfCategory;
+
+    private int eachCategoryTotal;
+
+    private List<SplitConfig> splitConfigList = new ArrayList<>();
 
     public GridLayoutConfig() {
         String userDir = System.getProperty("user.dir");
@@ -93,9 +105,15 @@ public class GridLayoutConfig {
         this.paddingRight = NumberUtils.toInt(properties.get("padding.right").toString(), Const.defPadding);
         this.paddingBottom = NumberUtils.toInt(properties.get("padding.bottom").toString(), Const.defPadding);
         this.paddingLeft = NumberUtils.toInt(properties.get("padding.left").toString(), Const.defPadding);
+        this.shockSize = NumberUtils.toInt(properties.get("shock.size").toString(), Const.shock);
 
+
+        this.numberOfCategory = NumberUtils.toInt(properties.get("category.number").toString(), 1);
+        this.eachCategoryTotal = NumberUtils.toInt(properties.get("each.category.total").toString(), 1);
 
         this.borderColor = new DeviceRgb(this.borderColorR, this.borderColorG, this.borderColorB);
+
+        System.out.println(this);
     }
 
     public static void main(String[] args) {
@@ -222,13 +240,46 @@ public class GridLayoutConfig {
         this.paddingLeft = paddingLeft;
     }
 
-    public int getLayoutW(){
+    public int getLayoutW() {
         return this.totalWidth - this.paddingLeft - this.paddingRight;
     }
 
-    public int getLayoutH(){
+    public int getLayoutH() {
         return this.totalHeight - this.paddingTop - this.paddingBottom;
     }
+
+    public List<SplitConfig> getSplitConfigList() {
+        return splitConfigList;
+    }
+
+    public void setSplitConfigList(List<SplitConfig> splitConfigList) {
+        this.splitConfigList = splitConfigList;
+    }
+
+    public int getShockSize() {
+        return shockSize;
+    }
+
+    public void setShockSize(int shockSize) {
+        this.shockSize = shockSize;
+    }
+
+    public int getNumberOfCategory() {
+        return numberOfCategory;
+    }
+
+    public void setNumberOfCategory(int numberOfCategory) {
+        this.numberOfCategory = numberOfCategory;
+    }
+
+    public int getEachCategoryTotal() {
+        return eachCategoryTotal;
+    }
+
+    public void setEachCategoryTotal(int eachCategoryTotal) {
+        this.eachCategoryTotal = eachCategoryTotal;
+    }
+
 
     @Override
     public String toString() {
@@ -248,6 +299,10 @@ public class GridLayoutConfig {
                 ", rectMinSize=" + rectMinSize +
                 ", blankProbability=" + blankProbability +
                 ", splitProbability=" + splitProbability +
+                ", shockSize=" + shockSize +
+                ", numberOfCategory=" + numberOfCategory +
+                ", eachCategoryTotal=" + eachCategoryTotal +
+                ", splitConfigList=" + splitConfigList +
                 '}';
     }
 }

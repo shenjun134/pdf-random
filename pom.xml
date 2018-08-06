@@ -166,7 +166,8 @@
                             </descriptorRefs>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.poc.pdf.Base</mainClass>
+                                    <!--<mainClass>com.poc.pdf.Base</mainClass>-->
+                                    <mainClass>com.poc.pdf.base.GridLines</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>

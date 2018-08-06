@@ -1,9 +1,13 @@
 package com.poc.pdf.util;
 
 import com.poc.pdf.model.*;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class GridLayoutUtil {
@@ -31,9 +35,21 @@ public class GridLayoutUtil {
         return NumberUtils.toInt(rd, 3);
     }
 
-    public static int randomSize(int totalSize) {
+    public static int randomPerSize(int totalSize) {
         int mod = randomMod();
         return totalSize * mod / 10;
+    }
+
+    public static int randomRange(int max, int min) {
+        double rd = Math.random() * 10000000;
+        int temp = (int) rd % max;
+        if (temp < min) {
+            temp = min;
+        }
+        if (randomTF(50)) {
+            return temp;
+        }
+        return -temp;
     }
 
 
@@ -43,7 +59,7 @@ public class GridLayoutUtil {
         int layoutW = config.getLayoutW();
         int layoutH = config.getLayoutH();
         boolean isHorizontal = layoutH > layoutW;
-        int offSite = isHorizontal ? randomSize(layoutH) : randomSize(layoutW);
+        int offSite = isHorizontal ? randomPerSize(layoutH) : randomPerSize(layoutW);
         splitConfig.setExisted(isExisted);
         splitConfig.setHorizontal(isHorizontal);
         splitConfig.setOffSite(offSite);
@@ -53,11 +69,13 @@ public class GridLayoutUtil {
 
     public static SplitConfig getSplitConfig(GridLayoutConfig config, boolean isBlank, Rectangle rectangle) {
         SplitConfig splitConfig = new SplitConfig();
+        splitConfig.setId(rectangle.getId());
+        splitConfig.setName(rectangle.getName());
         boolean isExisted = isBlank ? randomTF(config.getBlankProbability()) : randomTF(config.getSplitProbability());
         int layoutW = rectangle.width();
         int layoutH = rectangle.height();
         boolean isHorizontal = layoutH > layoutW;
-        int offSite = isHorizontal ? randomSize(layoutH) : randomSize(layoutW);
+        int offSite = isHorizontal ? randomPerSize(layoutH) : randomPerSize(layoutW);
         splitConfig.setExisted(isExisted);
         splitConfig.setHorizontal(isHorizontal);
         splitConfig.setOffSite(offSite);
@@ -73,12 +91,94 @@ public class GridLayoutUtil {
         Point endP = endP(config);
         rectangle.setPoint1(startP);
         rectangle.setPoint2(endP);
+        rectangle.setId(0L);
+        rectangle.setName("A");
         return rectangle;
     }
 
-    public static SplitRect splitAB(GridLayoutConfig config, Rectangle origRect, boolean isBlank) {
+    public static GridLayoutResult splitLoop(GridLayoutConfig config) {
+        TreeMap<String, Rectangle> map = new TreeMap<>();
+        GridLayoutResult result = new GridLayoutResult();
+        Rectangle totalRect = getTotalRect(config);
+        SplitConfig firstSplitConfig = config.getSplitConfigList().get(0);
+        config.getSplitConfigList().add(firstSplitConfig);
+        SplitRect firstSplit = splitAB(config, totalRect, true, firstSplitConfig);
+        map.put(totalRect.getName(), totalRect);
+
+
+        if (firstSplit.getSplitLine() != null) {
+//            result.addRect(firstSplit.getA());
+//            result.addRect(firstSplit.getB());
+            map.put(firstSplit.getA().getName(), firstSplit.getA());
+            map.put(firstSplit.getB().getName(), firstSplit.getB());
+
+            RectangleLine rectangleALine = new RectangleLine(firstSplit.getA());
+            RectangleLine rectangleBLine = new RectangleLine(firstSplit.getB());
+            result.getLineList().addAll(rectangleALine.getLineList());
+            result.getLineList().addAll(rectangleBLine.getLineList());
+            for (int i = 1; i < config.getSplitConfigList().size(); i++) {
+                SplitConfig tempConfig = config.getSplitConfigList().get(i);
+                Rectangle matchedRect = map.get(tempConfig.getName());
+                if (matchedRect == null) {
+                    logger.warn("No matched splitConfig-" + tempConfig);
+                    continue;
+                }
+                tempConfig.setShock(0);
+                if (config.getShockSize() > 0) {
+                    int shock = randomRange(config.getShockSize(), 0);
+                    if (shock != 0) {
+                        tempConfig.setShock(shock);
+                        logger.info("shock-" + shock);
+                    }
+                }
+                SplitRect splitRect = splitAB(config, matchedRect, false, tempConfig);
+                if (splitRect.getSplitLine() == null) {
+                    logger.info("Oops, no split - " + matchedRect + " | " + splitRect);
+                    continue;
+                }
+                matchedRect.setSplit(true);
+                result.addLine(splitRect.getSplitLine());
+                if (map.get(splitRect.getA().getName()) == null) {
+                    map.put(splitRect.getA().getName(), splitRect.getA());
+                } else {
+                    logger.warn("Something wrong map-" + map);
+                }
+                if (map.get(splitRect.getB().getName()) == null) {
+                    map.put(splitRect.getB().getName(), splitRect.getB());
+                } else {
+                    logger.warn("Something wrong map-" + map);
+                }
+            }
+            result.getRectList().addAll(map.values());
+        }
+        return result;
+    }
+
+
+    public static void doSplit(GridLayoutConfig config, SplitConfig splitConfig, Map<String, Rectangle> map, GridLayoutResult result) {
+        Rectangle matchedRect = map.get(splitConfig.getName());
+        if (matchedRect == null) {
+            logger.warn("No matched splitConfig-" + splitConfig);
+            return;
+        }
+        SplitRect splitRect = splitAB(config, matchedRect, false, splitConfig);
+        if (splitRect.getSplitLine() == null) {
+            logger.info("Oops, no split - " + matchedRect + " | " + splitRect);
+            return;
+        }
+        matchedRect.setSplit(true);
+        result.addRect(splitRect.getA());
+        result.addRect(splitRect.getB());
+        result.addLine(splitRect.getSplitLine());
+        map.put(splitRect.getA().getName(), splitRect.getA());
+        map.put(splitRect.getB().getName(), splitRect.getB());
+    }
+
+
+    public static SplitRect splitAB(GridLayoutConfig config, Rectangle origRect, boolean isBlank, SplitConfig splitConfig) {
         SplitRect splitRect = new SplitRect();
-        SplitConfig splitConfig = getSplitConfig(config, isBlank, origRect);
+//        SplitConfig splitConfig = getSplitConfig(config, isBlank, origRect);
+//        config.getSplitConfigList().add(splitConfig);
         splitRect.setConfig(splitConfig);
         if (!isBlank && !splitConfig.isExisted()) {
             return splitRect;
@@ -95,7 +195,7 @@ public class GridLayoutUtil {
 
         if (splitConfig.isHorizontal()) {
             Ax = endP.getX();
-            Ay = startP.getY() + splitConfig.getOffSite();
+            Ay = startP.getY() + splitConfig.getMergeOffSite();
             Bx = startP.getX();
             By = Ay;
             __Bx = Bx;
@@ -104,7 +204,7 @@ public class GridLayoutUtil {
                 By = Ay + splitConfig.getBlanWidth();
             }
         } else {
-            Ax = startP.getX() + splitConfig.getOffSite();
+            Ax = startP.getX() + splitConfig.getMergeOffSite();
             Ay = endP.getY();
             Bx = Ax;
             By = startP.getY();
@@ -136,6 +236,13 @@ public class GridLayoutUtil {
 
         Line splitLine = new Line(pointA, pointB__);
 
+        Long origId = origRect.getId();
+        A.setName(origRect.getName() + "-A");
+        A.setId(origId + 1L);
+        B.setName(origRect.getName() + "-B");
+        B.setId(origId + 2L);
+
+
         splitRect.setA(A);
         splitRect.setB(B);
         splitRect.setSplitLine(splitLine);
@@ -155,7 +262,9 @@ public class GridLayoutUtil {
             logger.info("Can not be split anymore - " + origRect);
             return;
         }
-        SplitRect splitRect = splitAB(config, origRect, false);
+        SplitConfig splitConfig = getSplitConfig(config, false, origRect);
+        config.getSplitConfigList().add(splitConfig);
+        SplitRect splitRect = splitAB(config, origRect, false, splitConfig);
         if (splitRect.getSplitLine() == null) {
             logger.info("Oops, no split - " + origRect + " | " + splitRect);
             return;
@@ -163,9 +272,9 @@ public class GridLayoutUtil {
         origRect.setSplit(true);
         result.addRect(splitRect.getA());
         result.addRect(splitRect.getB());
+        result.addLine(splitRect.getSplitLine());
         splitRect(result, config, splitRect.getA());
         splitRect(result, config, splitRect.getB());
-        result.addLine(splitRect.getSplitLine());
 
     }
 
@@ -187,7 +296,9 @@ public class GridLayoutUtil {
     public static GridLayoutResult randomGrid(GridLayoutConfig config) {
         GridLayoutResult result = new GridLayoutResult();
         Rectangle totalRect = getTotalRect(config);
-        SplitRect firstSplit = splitAB(config, totalRect, true);
+        SplitConfig splitConfig = getSplitConfig(config, true, totalRect);
+        config.getSplitConfigList().add(splitConfig);
+        SplitRect firstSplit = splitAB(config, totalRect, true, splitConfig);
 
         if (firstSplit.getSplitLine() != null) {
             splitRect(result, config, firstSplit.getA());

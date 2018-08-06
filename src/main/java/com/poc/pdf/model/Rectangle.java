@@ -4,6 +4,10 @@ import java.util.List;
 
 public class Rectangle {
 
+    private Long id;
+
+    private String name;
+
     private Point point1;
 
     private Point point2;
@@ -67,10 +71,28 @@ public class Rectangle {
         this.text = text;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public String toString() {
         return "Rectangle{" +
-                "point1=" + point1 +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", point1=" + point1 +
                 ", point2=" + point2 +
                 ", isSplit=" + isSplit +
                 ", text=" + text +

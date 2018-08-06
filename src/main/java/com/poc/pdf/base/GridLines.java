@@ -13,36 +13,90 @@ import com.poc.pdf.model.GridLayoutResult;
 import com.poc.pdf.model.Line;
 import com.poc.pdf.model.Point;
 import com.poc.pdf.util.GridLayoutUtil;
-import org.apache.commons.lang.RandomStringUtils;
+import com.poc.pdf.util.PDFUtil;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class GridLines {
 
-    public static final String DEST = "./grid_lines2.pdf";
+    /**
+     * logger
+     */
+    private static final Logger logger = Logger.getLogger(GridLines.class);
+
+
+    public static final String DEST = "./grid_lines-";
+
+    public static final String TYPE = ".pdf";
 
 
     interface Const {
         int baseFont = 16;
         int unitCharLength = 10;
-        int unitCharHeight = 16;
-        int offsiteX = 6;
+        int unitCharHeight = 18;
+        int offsiteX = 10;
         int offsiteY = 8;
+        String layoutName = "./layout/";
     }
 
     public static void main(String args[]) throws IOException {
-        File file = new File(DEST);
+        File file = new File(Const.layoutName);
         file.getParentFile().mkdirs();
-        new GridLines().createPdf(DEST);
+        GridLayoutConfig config = new GridLayoutConfig();
+        List<List<GridLayoutResult>> listInList = new ArrayList<>();
+
+        for (int index = 0; index < config.getNumberOfCategory(); index++) {
+            List<GridLayoutResult> resultList = getResult(config);
+            listInList.add(resultList);
+            String path = Const.layoutName + "type-" + index + "/";
+            File tempFile = new File(path);
+            tempFile.mkdirs();
+
+            for (int i = 0; i < resultList.size(); i++) {
+                GridLayoutResult temp = resultList.get(i);
+                String fileName = "type-" + index + "-" + i;
+                String fullPath = path + fileName + TYPE;
+                new GridLines().createPdf(fullPath, fileName, config, temp);
+            }
+        }
+
+        for (int index = 0; index < config.getNumberOfCategory(); index++) {
+            String path = Const.layoutName + "type-" + index + "/";
+            List<GridLayoutResult> resultList = listInList.get(index);
+            for (int i = 0; i < resultList.size(); i++) {
+                String fileName = "type-" + index + "-" + i;
+                String fullPath = path + fileName + TYPE;
+
+                String originalPdf = fullPath;
+                PDFUtil.splitPdf2Jpg(originalPdf, path, 72);
+            }
+        }
+
     }
 
-    public void createPdf(String dest) throws IOException {
-        GridLayoutConfig config = new GridLayoutConfig();
+    public static List<GridLayoutResult> getResult(GridLayoutConfig config) {
+        List<GridLayoutResult> resultList = new ArrayList<>();
+        config.getSplitConfigList().clear();
         GridLayoutResult result = GridLayoutUtil.randomGrid(config);
+//        result.printRect();
+        for (int i = 0; i < config.getEachCategoryTotal(); i++) {
+            resultList.add(result);
+//            GridLayoutResult temp = GridLayoutUtil.splitLoop(config);
+//            resultList.add(temp);
+//            temp.printRect();
+        }
+        return resultList;
+    }
+
+    public void createPdf(String dest, String fileName, GridLayoutConfig config, GridLayoutResult result) throws IOException {
         //Initialize PDF document
         PdfWriter writer = new PdfWriter(dest);
         PdfDocument pdf = new PdfDocument(writer);
@@ -57,8 +111,6 @@ public class GridLines {
         for (Line line : result.getLineList()) {
             drawLine(canvas, line, config);
         }
-
-
         canvas.stroke();
         int padding = 20;
         //fill in text
@@ -78,7 +130,10 @@ public class GridLines {
                     .setLeading(leadingSize)
                     .moveText(x, y);
             for (String text : textList) {
-                canvas.newlineShowText(text);
+                canvas.newlineText();
+                canvas.showText(text);
+//                canvas.newlineShowText(text);
+                logger.info("text:" + text);
             }
             canvas.endText();
 
@@ -87,7 +142,7 @@ public class GridLines {
 
         //make noise
 
-        makeNoiseTop(config, padding, canvas);
+        makeNoiseTop(config, padding, canvas, fileName);
         makeNoiseBottom(config, padding, canvas);
         makeNoiseLeft(config, padding, canvas);
         makeNoiseRight(config, padding, canvas);
@@ -110,30 +165,40 @@ public class GridLines {
         int offsite = Const.offsiteY;
 
         int height = rectangle.height();
+        int width = rectangle.width();
         int row = height / (unitCharLength * fontSize / baseFont) - offsite;
         if (row < 1) {
             row = 1;
         }
+
         List<String> list = new ArrayList<>(row);
+//        list.add(rectangle.getName());
         for (int i = 0; i < row; i++) {
             list.add(randomText(rectangle.width(), fontSize));
         }
+//        list.add("" + width + " X " + height);
         return list;
     }
 
     private static String randomText(int width, int fontSize) {
         int baseFont = Const.baseFont;
         int unitCharLength = Const.unitCharLength;
-        int offsite = Const.offsiteX;
-
+        int rd = (int) Math.random() * 10000 % 5;
+        int offsite = Const.offsiteX + rd;
         int count = width / (unitCharLength * fontSize / baseFont) - offsite;
-        if (count < 3) {
-            count = 3;
+        if (count < 2) {
+            count = 2;
         }
 //        String range = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+=-{}[];:'\"|\\/><,.`";
-        String range = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//        String range = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//
+//        return RandomStringUtils.random(count, 0, range.length(), true, true, range.toCharArray());
+//        return RandomStringUtils.random(count, chars);
+//        return RandomStringUtils.randomAscii(count);
 
-        return RandomStringUtils.random(count, range);
+        char[] possibleCharacters = (new String("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?")).toCharArray();
+        String randomStr = RandomStringUtils.random(count, 0, possibleCharacters.length - 1, false, false, possibleCharacters, new SecureRandom());
+        return randomStr;
     }
 
 
@@ -153,12 +218,12 @@ public class GridLines {
         canvas.endText();
     }
 
-    private static void makeNoiseTop(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
+    private static void makeNoiseTop(GridLayoutConfig config, int padding, PdfCanvas canvas, String fileName) throws IOException {
         int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
         int fontSizeTop = 60;
         float leadingSizeTop = 1.2f * fontSizeTop;
         String header = randomText(gridWidth / 4, fontSizeTop).toUpperCase() + " ---- " + new Date();
-        String header2 = randomText(gridWidth / 2, fontSizeTop).toUpperCase();
+        String header2 = fileName;
         String header3 = randomText(gridWidth / 1, fontSizeTop).toUpperCase();
         String fontFamilyTop = FontConstants.HELVETICA_BOLD;
         int topX = config.getPaddingLeft() + 2 * padding;
@@ -236,7 +301,7 @@ public class GridLines {
                 FontConstants.TIMES_BOLD,
                 FontConstants.TIMES_ITALIC,
                 FontConstants.TIMES_BOLDITALIC,
-                FontConstants.ZAPFDINGBATS,
+//                FontConstants.ZAPFDINGBATS,
                 FontConstants.TIMES
 
         };

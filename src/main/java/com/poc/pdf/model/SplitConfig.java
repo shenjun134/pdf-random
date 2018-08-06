@@ -2,9 +2,15 @@ package com.poc.pdf.model;
 
 public class SplitConfig {
 
+    private Long id;
+
+    private String name;
+
     private boolean isHorizontal;
 
     private int offSite;
+
+    private int shock;
 
     private int blanWidth;
 
@@ -19,6 +25,11 @@ public class SplitConfig {
     }
 
     public int getOffSite() {
+        return offSite;
+    }
+
+    public int getMergeOffSite() {
+//        return offSite + shock;
         return offSite;
     }
 
@@ -42,11 +53,38 @@ public class SplitConfig {
         isExisted = existed;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getShock() {
+        return shock;
+    }
+
+    public void setShock(int shock) {
+        this.shock = shock;
+    }
+
     @Override
     public String toString() {
         return "SplitConfig{" +
-                "isHorizontal=" + isHorizontal +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", isHorizontal=" + isHorizontal +
                 ", offSite=" + offSite +
+                ", shock=" + shock +
                 ", blanWidth=" + blanWidth +
                 ", isExisted=" + isExisted +
                 '}';
