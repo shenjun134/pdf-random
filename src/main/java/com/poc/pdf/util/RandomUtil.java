@@ -172,7 +172,10 @@ public class RandomUtil {
 
 
     /**
-     * @return
+     * length = 10
+     *
+     *
+     * @return 23/02/2018
      */
     public static String randomDate() {
         String day = randomDay();
@@ -180,6 +183,7 @@ public class RandomUtil {
         String year = randomYear();
         return new StringBuilder().append(day).append("/").append(month).append("/").append(year).toString();
     }
+
 
     /**
      * 01 ~ 28

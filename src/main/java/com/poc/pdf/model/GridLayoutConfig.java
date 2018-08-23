@@ -1,6 +1,5 @@
 package com.poc.pdf.model;
 
-import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.color.DeviceRgb;
 import org.apache.commons.lang.math.NumberUtils;
 
@@ -9,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class GridLayoutConfig {
+public class GridLayoutConfig extends SignatureConfig {
 
     public interface Const {
         int blankProbability = 80;
@@ -23,29 +22,10 @@ public class GridLayoutConfig {
         int defPadding = 50;
 
         int shock = 0;
+
+        int signatureMax = 5;
     }
 
-    private int totalWidth;
-
-    private int totalHeight;
-
-    private int paddingTop;
-
-    private int paddingRight;
-
-    private int paddingBottom;
-
-    private int paddingLeft;
-
-    private int borderWidth;
-
-    private int borderColorR = 0;
-
-    private int borderColorG = 0;
-
-    private int borderColorB = 0;
-
-    private Color borderColor;
 
     private int blankRowHeight;
 
@@ -63,6 +43,12 @@ public class GridLayoutConfig {
     private int numberOfCategory;
 
     private int eachCategoryTotal;
+
+    /**
+     * random offsize
+     */
+    private int parentOffsize;
+
 
     private List<SplitConfig> splitConfigList = new ArrayList<>();
 
@@ -100,6 +86,10 @@ public class GridLayoutConfig {
         this.rectMinSize = NumberUtils.toInt(properties.get("rectangle.min.size").toString(), Const.rectMinSize);
         this.blankProbability = NumberUtils.toInt(properties.get("probability.blank").toString(), Const.blankProbability);
         this.splitProbability = NumberUtils.toInt(properties.get("probability.split").toString(), Const.splitProbability);
+        this.noiseTopProbability = NumberUtils.toInt(properties.get("probability.noise.top").toString(), 0);
+        this.noiseBottomProbability = NumberUtils.toInt(properties.get("probability.noise.bottom").toString(), 0);
+        this.noiseLeftProbability = NumberUtils.toInt(properties.get("probability.noise.left").toString(), 0);
+        this.noiseRightProbability = NumberUtils.toInt(properties.get("probability.noise.right").toString(), 0);
 
         this.paddingTop = NumberUtils.toInt(properties.get("padding.top").toString(), Const.defPadding);
         this.paddingRight = NumberUtils.toInt(properties.get("padding.right").toString(), Const.defPadding);
@@ -107,11 +97,60 @@ public class GridLayoutConfig {
         this.paddingLeft = NumberUtils.toInt(properties.get("padding.left").toString(), Const.defPadding);
         this.shockSize = NumberUtils.toInt(properties.get("shock.size").toString(), Const.shock);
 
+        this.parentOffsize = NumberUtils.toInt(properties.get("rectangle.parent.max.offsize").toString(), 0);
 
         this.numberOfCategory = NumberUtils.toInt(properties.get("category.number").toString(), 1);
         this.eachCategoryTotal = NumberUtils.toInt(properties.get("each.category.total").toString(), 1);
 
         this.borderColor = new DeviceRgb(this.borderColorR, this.borderColorG, this.borderColorB);
+
+        this.signatureWidth = NumberUtils.toInt(properties.get("signature.react.max.width").toString(), TableLayoutConfig.Const.signatureWidth);
+        this.signatureHeight = NumberUtils.toInt(properties.get("signature.react.max.height").toString(), TableLayoutConfig.Const.signatureHeight);
+
+        this.signatureMax = NumberUtils.toInt(properties.get("signature.max").toString(), 0);
+        this.signatureMin = NumberUtils.toInt(properties.get("signature.min").toString(), 0);
+
+
+        this.markRectPaddingTop = NumberUtils.toInt(properties.get("mark.rectangle.padding.top").toString(), 0);
+        this.markRectPaddingBottom = NumberUtils.toInt(properties.get("mark.rectangle.padding.bottom").toString(), 0);
+        this.markRectPaddingLeft = NumberUtils.toInt(properties.get("mark.rectangle.padding.left").toString(), 0);
+        this.markRectPaddingRight = NumberUtils.toInt(properties.get("mark.rectangle.padding.right").toString(), 0);
+
+//        if (this.markRectPaddingTop > this.cellPaddingTop) {
+//            this.markRectPaddingTop = this.cellPaddingTop;
+//        }
+//        if (this.markRectPaddingBottom > this.cellPaddingBottom) {
+//            this.markRectPaddingBottom = this.cellPaddingBottom;
+//        }
+//        if (this.markRectPaddingLeft > this.cellPaddingLeft) {
+//            this.markRectPaddingLeft = this.cellPaddingLeft;
+//        }
+//        if (this.markRectPaddingRight > this.cellPaddingRight) {
+//            this.markRectPaddingRight = this.cellPaddingRight;
+//        }
+
+        this.markBorderColorR = NumberUtils.toInt(properties.get("mark.border.color.red").toString(), 0);
+        this.markBorderColorG = NumberUtils.toInt(properties.get("mark.border.color.green").toString(), 0);
+        this.markBorderColorB = NumberUtils.toInt(properties.get("mark.border.color.blue").toString(), 0);
+
+        this.markBorderColor = new DeviceRgb(this.markBorderColorR, this.markBorderColorG, this.markBorderColorB);
+
+        Object signatureDir = properties.get("signature.dir");
+        if (signatureDir == null) {
+            throw new RuntimeException("signature.dir no set");
+        }
+        this.signatureDir = signatureDir.toString();
+
+        if (this.signatureMax > Const.signatureMax) {
+            this.signatureMax = Const.signatureMax;
+        } else if (this.signatureMax < 0) {
+            this.signatureMax = 0;
+        }
+        if (this.signatureMin > this.signatureMax) {
+            this.signatureMin = this.signatureMax;
+        } else if (this.signatureMin < 0) {
+            this.signatureMin = 0;
+        }
 
         System.out.println(this);
     }
@@ -120,60 +159,13 @@ public class GridLayoutConfig {
         System.out.println(new GridLayoutConfig());
     }
 
-    public int getTotalWidth() {
-        return totalWidth;
+
+    public int getLayoutW() {
+        return this.totalWidth - this.paddingLeft - this.paddingRight;
     }
 
-    public void setTotalWidth(int totalWidth) {
-        this.totalWidth = totalWidth;
-    }
-
-    public int getTotalHeight() {
-        return totalHeight;
-    }
-
-    public void setTotalHeight(int totalHeight) {
-        this.totalHeight = totalHeight;
-    }
-
-    public int getBorderWidth() {
-        return borderWidth;
-    }
-
-    public void setBorderWidth(int borderWidth) {
-        this.borderWidth = borderWidth;
-    }
-
-    public int getBorderColorR() {
-        return borderColorR;
-    }
-
-    public void setBorderColorR(int borderColorR) {
-        this.borderColorR = borderColorR;
-    }
-
-    public int getBorderColorG() {
-        return borderColorG;
-    }
-
-    public void setBorderColorG(int borderColorG) {
-        this.borderColorG = borderColorG;
-    }
-
-    public int getBorderColorB() {
-        return borderColorB;
-    }
-
-    public void setBorderColorB(int borderColorB) {
-        this.borderColorB = borderColorB;
-    }
-
-    public Color getBorderColor() {
-        return borderColor;
-    }
-
-    public void setBorderColor(Color borderColor) {
-        this.borderColor = borderColor;
+    public int getLayoutH() {
+        return this.totalHeight - this.paddingTop - this.paddingBottom;
     }
 
     public int getBlankRowHeight() {
@@ -208,54 +200,6 @@ public class GridLayoutConfig {
         this.splitProbability = splitProbability;
     }
 
-    public int getPaddingTop() {
-        return paddingTop;
-    }
-
-    public void setPaddingTop(int paddingTop) {
-        this.paddingTop = paddingTop;
-    }
-
-    public int getPaddingRight() {
-        return paddingRight;
-    }
-
-    public void setPaddingRight(int paddingRight) {
-        this.paddingRight = paddingRight;
-    }
-
-    public int getPaddingBottom() {
-        return paddingBottom;
-    }
-
-    public void setPaddingBottom(int paddingBottom) {
-        this.paddingBottom = paddingBottom;
-    }
-
-    public int getPaddingLeft() {
-        return paddingLeft;
-    }
-
-    public void setPaddingLeft(int paddingLeft) {
-        this.paddingLeft = paddingLeft;
-    }
-
-    public int getLayoutW() {
-        return this.totalWidth - this.paddingLeft - this.paddingRight;
-    }
-
-    public int getLayoutH() {
-        return this.totalHeight - this.paddingTop - this.paddingBottom;
-    }
-
-    public List<SplitConfig> getSplitConfigList() {
-        return splitConfigList;
-    }
-
-    public void setSplitConfigList(List<SplitConfig> splitConfigList) {
-        this.splitConfigList = splitConfigList;
-    }
-
     public int getShockSize() {
         return shockSize;
     }
@@ -280,29 +224,19 @@ public class GridLayoutConfig {
         this.eachCategoryTotal = eachCategoryTotal;
     }
 
+    public List<SplitConfig> getSplitConfigList() {
+        return splitConfigList;
+    }
 
-    @Override
-    public String toString() {
-        return "GridLayoutConfig{" +
-                "totalWidth=" + totalWidth +
-                ", totalHeight=" + totalHeight +
-                ", paddingTop=" + paddingTop +
-                ", paddingRight=" + paddingRight +
-                ", paddingBottom=" + paddingBottom +
-                ", paddingLeft=" + paddingLeft +
-                ", borderWidth=" + borderWidth +
-                ", borderColorR=" + borderColorR +
-                ", borderColorG=" + borderColorG +
-                ", borderColorB=" + borderColorB +
-                ", borderColor=" + borderColor +
-                ", blankRowHeight=" + blankRowHeight +
-                ", rectMinSize=" + rectMinSize +
-                ", blankProbability=" + blankProbability +
-                ", splitProbability=" + splitProbability +
-                ", shockSize=" + shockSize +
-                ", numberOfCategory=" + numberOfCategory +
-                ", eachCategoryTotal=" + eachCategoryTotal +
-                ", splitConfigList=" + splitConfigList +
-                '}';
+    public void setSplitConfigList(List<SplitConfig> splitConfigList) {
+        this.splitConfigList = splitConfigList;
+    }
+
+    public int getParentOffsize() {
+        return parentOffsize;
+    }
+
+    public void setParentOffsize(int parentOffsize) {
+        this.parentOffsize = parentOffsize;
     }
 }

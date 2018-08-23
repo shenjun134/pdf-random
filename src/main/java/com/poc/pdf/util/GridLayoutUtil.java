@@ -85,10 +85,18 @@ public class GridLayoutUtil {
         return splitConfig;
     }
 
-    public static Rectangle getTotalRect(GridLayoutConfig config) {
+    public static Rectangle getTotalRect(GridLayoutConfig config, GridLayoutResult result) {
         Rectangle rectangle = new Rectangle();
-        Point startP = startP(config);
-        Point endP = endP(config);
+        int rd = randomRange(config.getParentOffsize(), 0);
+        rd = Math.abs(rd);
+        result.setPaddingTop(config.getPaddingTop() + rd);
+        result.setPaddingBottom(config.getPaddingBottom() + rd);
+        result.setPaddingLeft(config.getPaddingLeft() + rd);
+        result.setPaddingRight(config.getPaddingRight() + rd);
+
+
+        Point startP = startP(config, rd);
+        Point endP = endP(config, rd);
         rectangle.setPoint1(startP);
         rectangle.setPoint2(endP);
         rectangle.setId(0L);
@@ -99,7 +107,7 @@ public class GridLayoutUtil {
     public static GridLayoutResult splitLoop(GridLayoutConfig config) {
         TreeMap<String, Rectangle> map = new TreeMap<>();
         GridLayoutResult result = new GridLayoutResult();
-        Rectangle totalRect = getTotalRect(config);
+        Rectangle totalRect = getTotalRect(config, result);
         SplitConfig firstSplitConfig = config.getSplitConfigList().get(0);
         config.getSplitConfigList().add(firstSplitConfig);
         SplitRect firstSplit = splitAB(config, totalRect, true, firstSplitConfig);
@@ -279,13 +287,13 @@ public class GridLayoutUtil {
     }
 
 
-    public static Point startP(GridLayoutConfig config) {
-        return new Point(config.getPaddingLeft(), config.getPaddingTop());
+    public static Point startP(GridLayoutConfig config, int rd) {
+        return new Point(config.getPaddingLeft() + rd, config.getPaddingTop() + rd);
     }
 
 
-    public static Point endP(GridLayoutConfig config) {
-        return new Point(config.getTotalWidth() - config.getPaddingRight(), config.getTotalHeight() - config.getPaddingBottom());
+    public static Point endP(GridLayoutConfig config, int rd) {
+        return new Point(config.getTotalWidth() - config.getPaddingRight() - rd, config.getTotalHeight() - config.getPaddingBottom() - rd);
     }
 
     public static boolean isBlankExist(GridLayoutConfig config) {
@@ -295,7 +303,7 @@ public class GridLayoutUtil {
 
     public static GridLayoutResult randomGrid(GridLayoutConfig config) {
         GridLayoutResult result = new GridLayoutResult();
-        Rectangle totalRect = getTotalRect(config);
+        Rectangle totalRect = getTotalRect(config, result);
         SplitConfig splitConfig = getSplitConfig(config, true, totalRect);
         config.getSplitConfigList().add(splitConfig);
         SplitRect firstSplit = splitAB(config, totalRect, true, splitConfig);

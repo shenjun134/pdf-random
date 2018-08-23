@@ -1,6 +1,6 @@
 package com.poc.pdf.base;
 
-import com.itextpdf.io.font.FontConstants;
+import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -8,24 +8,21 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.poc.pdf.model.GridLayoutConfig;
-import com.poc.pdf.model.GridLayoutResult;
-import com.poc.pdf.model.Line;
-import com.poc.pdf.model.Point;
+import com.poc.pdf.model.*;
+import com.poc.pdf.util.FileUtil;
 import com.poc.pdf.util.GridLayoutUtil;
 import com.poc.pdf.util.PDFUtil;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.RandomStringUtils;
+import com.poc.pdf.util.TableUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.net.MalformedURLException;
+import java.util.*;
 
-public class GridLines {
+public class GridLines extends BaseLine {
 
     /**
      * logger
@@ -33,25 +30,26 @@ public class GridLines {
     private static final Logger logger = Logger.getLogger(GridLines.class);
 
 
-    public static final String DEST = "./grid_lines-";
-
     public static final String TYPE = ".pdf";
 
 
     interface Const {
-        int baseFont = 16;
-        int unitCharLength = 10;
-        int unitCharHeight = 18;
-        int offsiteX = 10;
-        int offsiteY = 8;
         String layoutName = "./layout/";
+        int blankPadding = 10;
+        String dateFormat = "MMM/dd/yyyy hh:mm:ss";
     }
 
     public static void main(String args[]) throws IOException {
+        process();
+    }
+
+    public static void process() throws IOException {
         File file = new File(Const.layoutName);
         file.getParentFile().mkdirs();
         GridLayoutConfig config = new GridLayoutConfig();
         List<List<GridLayoutResult>> listInList = new ArrayList<>();
+
+        List<FileInfo> signatureList = FileUtil.loadDirImages(config.getSignatureDir());
 
         for (int index = 0; index < config.getNumberOfCategory(); index++) {
             List<GridLayoutResult> resultList = getResult(config);
@@ -64,7 +62,7 @@ public class GridLines {
                 GridLayoutResult temp = resultList.get(i);
                 String fileName = "type-" + index + "-" + i;
                 String fullPath = path + fileName + TYPE;
-                new GridLines().createPdf(fullPath, fileName, config, temp);
+                createPdf(fullPath, fileName, config, temp, signatureList);
             }
         }
 
@@ -96,7 +94,7 @@ public class GridLines {
         return resultList;
     }
 
-    public void createPdf(String dest, String fileName, GridLayoutConfig config, GridLayoutResult result) throws IOException {
+    public static void createPdf(String dest, String fileName, GridLayoutConfig config, GridLayoutResult result, List<FileInfo> signatureList) throws IOException {
         //Initialize PDF document
         PdfWriter writer = new PdfWriter(dest);
         PdfDocument pdf = new PdfDocument(writer);
@@ -114,141 +112,243 @@ public class GridLines {
         canvas.stroke();
         int padding = 20;
         //fill in text
+        Map<String, com.poc.pdf.model.Rectangle> blankMap = randomBlank(result, config);
+
         for (com.poc.pdf.model.Rectangle rectangle : result.getRectList()) {
             if (rectangle.isSplit()) {
                 continue;
             }
-            int fontSize = fontSize();
-            float leadingSize = 1.2f * fontSize;
-            List<String> textList = randomString(rectangle, fontSize);
-            int x = rectangle.getReal1(config).getX() + padding;
-            int y = rectangle.getReal1(config).getY() - padding;
-
-            String fontFamily = fontProgram();
-            canvas.beginText()
-                    .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
-                    .setLeading(leadingSize)
-                    .moveText(x, y);
-            for (String text : textList) {
-                canvas.newlineText();
-                canvas.showText(text);
-//                canvas.newlineShowText(text);
-                logger.info("text:" + text);
+            if (blankMap.containsKey(rectangle.getName())) {
+                continue;
             }
-            canvas.endText();
-
-            rectangle.setText(textList);
+            writeText(rectangle, config, padding, canvas);
         }
 
         //make noise
 
-        makeNoiseTop(config, padding, canvas, fileName);
-        makeNoiseBottom(config, padding, canvas);
-        makeNoiseLeft(config, padding, canvas);
-        makeNoiseRight(config, padding, canvas);
+        makeNoiseTop(config, padding, canvas, fileName, blankMap, result);
+        makeNoiseBottom(config, padding, canvas, blankMap, result);
+        makeNoiseLeft(config, padding, canvas, blankMap, result);
+        makeNoiseRight(config, padding, canvas, blankMap, result);
 
+        drawBlankArea(blankMap, canvas, config);
 
+        List<com.poc.pdf.model.Rectangle> textRectList = insertSignature(blankMap, canvas, config, signatureList);
+        for (com.poc.pdf.model.Rectangle rectangle : textRectList) {
+            logger.info("begin to write :" + rectangle.getName());
+            writeText(rectangle, config, padding, canvas);
+        }
         //Close document
         pdf.close();
     }
 
-    private static void drawLine(PdfCanvas canvas, Line line, GridLayoutConfig config) {
-        Point p1 = line.getReal1(config);
-        Point p2 = line.getReal2(config);
-
-        canvas.moveTo(p1.getX(), p1.getY()).lineTo(p2.getX(), p2.getY());
-    }
-
-    private static List<String> randomString(com.poc.pdf.model.Rectangle rectangle, int fontSize) {
-        int baseFont = Const.baseFont;
-        int unitCharLength = Const.unitCharHeight;
-        int offsite = Const.offsiteY;
-
-        int height = rectangle.height();
-        int width = rectangle.width();
-        int row = height / (unitCharLength * fontSize / baseFont) - offsite;
-        if (row < 1) {
-            row = 1;
-        }
-
-        List<String> list = new ArrayList<>(row);
-//        list.add(rectangle.getName());
-        for (int i = 0; i < row; i++) {
-            list.add(randomText(rectangle.width(), fontSize));
-        }
-//        list.add("" + width + " X " + height);
-        return list;
-    }
-
-    private static String randomText(int width, int fontSize) {
-        int baseFont = Const.baseFont;
-        int unitCharLength = Const.unitCharLength;
-        int rd = (int) Math.random() * 10000 % 5;
-        int offsite = Const.offsiteX + rd;
-        int count = width / (unitCharLength * fontSize / baseFont) - offsite;
-        if (count < 2) {
-            count = 2;
-        }
-//        String range = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+=-{}[];:'\"|\\/><,.`";
-//        String range = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-//
-//        return RandomStringUtils.random(count, 0, range.length(), true, true, range.toCharArray());
-//        return RandomStringUtils.random(count, chars);
-//        return RandomStringUtils.randomAscii(count);
-
-        char[] possibleCharacters = (new String("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?")).toCharArray();
-        String randomStr = RandomStringUtils.random(count, 0, possibleCharacters.length - 1, false, false, possibleCharacters, new SecureRandom());
-        return randomStr;
-    }
-
-
-    private static void makeNoiseBottom(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
-        int fontSize = 26;
+    private static void writeText(com.poc.pdf.model.Rectangle rectangle, GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
+        int fontSize = TableUtil.fontSize();
         float leadingSize = 1.2f * fontSize;
-        int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
-        String bottomText = randomText(gridWidth, fontSize);
-        String fontFamily = fontProgram();
-        int bottomX = config.getPaddingLeft() - padding;
-        int bottomY = 2 * fontSize;
+        List<String> textList = TableUtil.randomString(rectangle, fontSize, config);
+        int x = rectangle.getReal1(config).getX() + padding;
+        int y = rectangle.getReal1(config).getY() - padding;
+
+        String fontFamily = TableUtil.fontProgram();
         canvas.beginText()
                 .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setLeading(leadingSize)
+                .moveText(x, y);
+        for (String text : textList) {
+            canvas.newlineText();
+            canvas.showText(text);
+//                canvas.newlineShowText(text);
+            logger.debug("text:" + text);
+        }
+        canvas.endText();
+
+        rectangle.setText(textList);
+    }
+
+    /**
+     * @param result
+     * @param config
+     * @return
+     */
+    private static Map<String, com.poc.pdf.model.Rectangle> randomBlank(GridLayoutResult result, SignatureConfig config) {
+        Map<String, com.poc.pdf.model.Rectangle> map = new HashMap<>();
+        List<com.poc.pdf.model.Rectangle> srcRectList = new ArrayList<>();
+        for (com.poc.pdf.model.Rectangle rectangle : result.getRectList()) {
+            if (rectangle.isSplit()) {
+                continue;
+            }
+            srcRectList.add(rectangle);
+        }
+        int rd = TableUtil.randomRange(config.getSignatureMax(), config.getSignatureMin());
+        if (rd > srcRectList.size()) {
+            if (srcRectList.size() == 1) {
+                return map;
+
+            }
+            rd = TableUtil.randomRange(srcRectList.size(), 0);
+        }
+        if (rd == 0) {
+            return map;
+        }
+
+        Collections.shuffle(srcRectList);
+        for (int i = 0; i < rd; i++) {
+            com.poc.pdf.model.Rectangle rectangle = srcRectList.get(i);
+            map.put(rectangle.getName(), rectangle);
+        }
+        return map;
+    }
+
+
+    private static void makeNoiseBottom(GridLayoutConfig config, int padding, PdfCanvas canvas, Map<String, com.poc.pdf.model.Rectangle> blankMap, GridLayoutResult result) throws IOException {
+        if (!TableUtil.randomTF(config.getNoiseBottomProbability())) {
+            int offsitePadding = Const.blankPadding;
+            int x1 = offsitePadding;
+            int y1 = (config.getTotalHeight() - result.getPaddingBottom() + offsitePadding);
+            int x2 = config.getTotalWidth() - offsitePadding;
+            int y2 = (config.getTotalHeight() + offsitePadding);
+            Point point1 = new Point(x1, y1);
+            Point point2 = new Point(x2, y2);
+            com.poc.pdf.model.Rectangle blank = new com.poc.pdf.model.Rectangle();
+            blank.setPoint1(point1);
+            blank.setPoint2(point2);
+            blank.setName("BOTTOM-BLANK");
+
+            blankMap.put("BOTTOM-BLANK", blank);
+            return;
+        }
+        int fontSize = TableUtil.smallFontSize();
+        float leadingSize = 1.2f * fontSize;
+        int gridWidth = config.getTotalWidth() - result.getPaddingLeft() - result.getPaddingRight();
+        String bottomText = TableUtil.randomText(gridWidth, fontSize);
+        String fontFamily = TableUtil.fontProgram();
+        int bottomX = config.getPaddingLeft() - padding;
+        int bottomY = 2 * fontSize;
+        PdfFont baseFont = PdfFontFactory.createFont(fontFamily);
+        canvas.beginText()
+                .setFontAndSize(baseFont, fontSize)
                 .setLeading(leadingSize)
                 .moveText(bottomX, bottomY);
         canvas.newlineShowText(bottomText);
         canvas.endText();
+
+        float length = baseFont.getWidth(bottomText, fontSize);
+        int offsitePadding = Const.blankPadding;
+        int x1 = bottomX + (int) length + offsitePadding;
+        int y1 = (config.getTotalHeight() - result.getPaddingBottom() + offsitePadding);
+        int x2 = config.getTotalWidth() - offsitePadding;
+        int y2 = (config.getTotalHeight() + offsitePadding);
+        Point point1 = new Point(x1, y1);
+        Point point2 = new Point(x2, y2);
+        com.poc.pdf.model.Rectangle blank = new com.poc.pdf.model.Rectangle();
+        blank.setPoint1(point1);
+        blank.setPoint2(point2);
+        blank.setName("BOTTOM-BLANK");
+
+        blankMap.put("BOTTOM-BLANK", blank);
     }
 
-    private static void makeNoiseTop(GridLayoutConfig config, int padding, PdfCanvas canvas, String fileName) throws IOException {
-        int gridWidth = config.getTotalWidth() - config.getPaddingLeft() - config.getPaddingRight();
-        int fontSizeTop = 60;
+    private static void makeNoiseTop(GridLayoutConfig config, int padding, PdfCanvas canvas, String fileName, Map<String, com.poc.pdf.model.Rectangle> blankMap, GridLayoutResult result) throws IOException {
+        if (!TableUtil.randomTF(config.getNoiseTopProbability())) {
+            int offsitePadding = Const.blankPadding;
+            int x1 = offsitePadding;
+            int y1 = (offsitePadding);
+            int x2 = config.getTotalWidth() - offsitePadding;
+            int y2 = (result.getPaddingTop() - offsitePadding);
+            Point point1 = new Point(x1, y1);
+            Point point2 = new Point(x2, y2);
+            com.poc.pdf.model.Rectangle blank = new com.poc.pdf.model.Rectangle();
+            blank.setPoint1(point1);
+            blank.setPoint2(point2);
+            blank.setName("TOP-BLANK");
+            blankMap.put("TOP-BLANK", blank);
+            return;
+        }
+
+        int gridWidth = config.getTotalWidth() - result.getPaddingLeft() - result.getPaddingRight();
+        int fontSizeTop = TableUtil.smallFontSize() * 2;
+//        int fontSizeTop = 72;
         float leadingSizeTop = 1.2f * fontSizeTop;
-        String header = randomText(gridWidth / 4, fontSizeTop).toUpperCase() + " ---- " + new Date();
-        String header2 = fileName;
-        String header3 = randomText(gridWidth / 1, fontSizeTop).toUpperCase();
-        String fontFamilyTop = FontConstants.HELVETICA_BOLD;
-        int topX = config.getPaddingLeft() + 2 * padding;
+        String header = fileName + " " + DateFormatUtils.format(new Date(), Const.dateFormat);
+        String fontFamilyTop = TableUtil.fontProgramSoft();
+        int topX = result.getPaddingLeft() + 2 * padding;
         int topY = config.getTotalHeight() - padding;
+        PdfFont baseFont = PdfFontFactory.createFont(fontFamilyTop);
+        String header2 = getLimitMsg(baseFont, header, gridWidth, fontSizeTop);
+        String header3 = getLimitMsg(baseFont, header, gridWidth, fontSizeTop);
         canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamilyTop), fontSizeTop)
+                .setFontAndSize(baseFont, fontSizeTop)
                 .setLeading(leadingSizeTop)
                 .moveText(topX, topY);
         canvas.newlineShowText(header);
         canvas.newlineShowText(header2);
         canvas.newlineShowText(header3);
         canvas.endText();
+        float length = baseFont.getWidth(header, fontSizeTop);
+        float temp = baseFont.getWidth(header2, fontSizeTop);
+        if (temp > length) {
+            length = temp;
+        }
+        temp = baseFont.getWidth(header3, fontSizeTop);
+        if (temp > length) {
+            length = temp;
+        }
+        int offsitePadding = Const.blankPadding;
+        int x1 = topX + (int) length + offsitePadding;
+        int y1 = (offsitePadding);
+        int x2 = config.getTotalWidth() - offsitePadding;
+        int y2 = (result.getPaddingTop() - offsitePadding);
+        Point point1 = new Point(x1, y1);
+        Point point2 = new Point(x2, y2);
+        com.poc.pdf.model.Rectangle blank = new com.poc.pdf.model.Rectangle();
+        blank.setPoint1(point1);
+        blank.setPoint2(point2);
+        blank.setName("TOP-BLANK");
+        blankMap.put("TOP-BLANK", blank);
     }
 
-    private static void makeNoiseLeft(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
-        int fontSize = 26;
+    private static String getLimitMsg(PdfFont baseFont, String base, int width, int fontSize) {
+        float limit = baseFont.getWidth(base, fontSize);
+        String temp = TableUtil.randomText(width, fontSize);
+        if (baseFont.getWidth(temp, fontSize) <= limit) {
+            return temp;
+        }
+        int count = 3;
+        while (count > 0) {
+            temp = TableUtil.randomText(width, fontSize);
+            if (baseFont.getWidth(temp, fontSize) <= limit) {
+                return temp;
+            }
+            count--;
+        }
+        return TableUtil.randomText(width / 2, fontSize);
+    }
+
+    private static void makeNoiseLeft(GridLayoutConfig config, int padding, PdfCanvas canvas, Map<String, com.poc.pdf.model.Rectangle> blankMap, GridLayoutResult result) throws IOException {
+        if (!TableUtil.randomTF(config.getNoiseLeftProbability())) {
+            int offsitePadding = Const.blankPadding;
+            int x1 = 0 + offsitePadding;
+            int y1 = (offsitePadding + result.getPaddingTop());
+            int x2 = result.getPaddingLeft() - offsitePadding;
+            int y2 = (config.getTotalHeight() - offsitePadding - result.getPaddingBottom());
+            Point point1 = new Point(x1, y1);
+            Point point2 = new Point(x2, y2);
+            com.poc.pdf.model.Rectangle blank = new com.poc.pdf.model.Rectangle();
+            blank.setPoint1(point1);
+            blank.setPoint2(point2);
+            blank.setName("LEFT-BLANK");
+            blankMap.put("LEFT-BLANK", blank);
+            return;
+        }
+        int fontSize = TableUtil.smallFontSize();
         float leadingSize = 1.2f * fontSize;
-        int gridWidth = config.getTotalHeight() - config.getPaddingTop() - config.getPaddingBottom();
-        String leftText = randomText((int) (gridWidth / 1.5f), fontSize);
-        String fontFamily = fontProgram();
+        int gridWidth = config.getTotalHeight() - result.getPaddingTop() - result.getPaddingBottom();
+        String leftText = TableUtil.randomText((int) (gridWidth / 1.5f), fontSize);
+        String fontFamily = TableUtil.fontProgramSoft();
         int leftX = 1 * fontSize;
         int leftY = config.getTotalHeight() - 2 * padding;
         canvas.beginText()
                 .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
-                .setTextRenderingMode(1)
                 .setLeading(leadingSize)
                 .moveText(leftX, leftY);
         int size = leftText.length();
@@ -259,17 +359,31 @@ public class GridLines {
         canvas.endText();
     }
 
-    private static void makeNoiseRight(GridLayoutConfig config, int padding, PdfCanvas canvas) throws IOException {
-        int fontSize = 26;
+    private static void makeNoiseRight(GridLayoutConfig config, int padding, PdfCanvas canvas, Map<String, com.poc.pdf.model.Rectangle> blankMap, GridLayoutResult result) throws IOException {
+        if (!TableUtil.randomTF(config.getNoiseRightProbability())) {
+            int offsitePadding = Const.blankPadding;
+            int x1 = config.getTotalWidth() - result.getPaddingRight() + offsitePadding;
+            int y1 = (offsitePadding + result.getPaddingTop());
+            int x2 = config.getTotalWidth() - offsitePadding;
+            int y2 = (config.getTotalHeight() - offsitePadding - result.getPaddingBottom());
+            Point point1 = new Point(x1, y1);
+            Point point2 = new Point(x2, y2);
+            com.poc.pdf.model.Rectangle blank = new com.poc.pdf.model.Rectangle();
+            blank.setPoint1(point1);
+            blank.setPoint2(point2);
+            blank.setName("RIGHT-BLANK");
+            blankMap.put("RIGHT-BLANK", blank);
+            return;
+        }
+        int fontSize = TableUtil.smallFontSize();
         float leadingSize = 1.2f * fontSize;
-        int gridWidth = config.getTotalHeight() - config.getPaddingTop() - config.getPaddingBottom();
-        String leftText = randomText((int) (gridWidth / 1.5f), fontSize);
-        String fontFamily = fontProgram();
+        int gridWidth = config.getTotalHeight() - result.getPaddingTop() - config.getPaddingBottom();
+        String leftText = TableUtil.randomText((int) (gridWidth / 1.5f), fontSize);
+        String fontFamily = TableUtil.fontProgramSoft();
         int leftX = config.getTotalWidth() - 2 * fontSize;
         int leftY = config.getTotalHeight() - 2 * padding;
         canvas.beginText()
                 .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
-                .setTextRenderingMode(1)
                 .setLeading(leadingSize)
                 .moveText(leftX, leftY);
         int size = leftText.length();
@@ -280,33 +394,89 @@ public class GridLines {
         canvas.endText();
     }
 
-    private static int fontSize() {
-        double rd = Math.random() * 1000;
-        return 14 + (int) (rd / 10);
+    protected static void drawBlankArea(Map<String, com.poc.pdf.model.Rectangle> blankRectList, PdfCanvas canvas, SignatureConfig config) {
+        for (com.poc.pdf.model.Rectangle blank : blankRectList.values()) {
+            RectangleLine rectangleLine = new RectangleLine(blank, 2 * config.getBorderWidth());
+            for (Line line : rectangleLine.getLineList()) {
+                canvas.setLineWidth(line.getWidth()).setStrokeColor(config.getMarkBorderColor()).setLineDash(10, 10);
+                drawLine(canvas, line, config);
+                canvas.stroke();
+            }
+        }
     }
 
-    private static String fontProgram() {
-        double rd = Math.random() * 1000;
-        String[] fontArr = new String[]{
-                FontConstants.COURIER,
-                FontConstants.COURIER_BOLD,
-                FontConstants.COURIER_OBLIQUE,
-                FontConstants.COURIER_BOLDOBLIQUE,
-                FontConstants.HELVETICA,
-                FontConstants.HELVETICA_BOLD,
-                FontConstants.HELVETICA_OBLIQUE,
-                FontConstants.HELVETICA_BOLDOBLIQUE,
-                FontConstants.SYMBOL,
-                FontConstants.TIMES_ROMAN,
-                FontConstants.TIMES_BOLD,
-                FontConstants.TIMES_ITALIC,
-                FontConstants.TIMES_BOLDITALIC,
-//                FontConstants.ZAPFDINGBATS,
-                FontConstants.TIMES
+    public static List<com.poc.pdf.model.Rectangle> insertSignature(Map<String, com.poc.pdf.model.Rectangle> blankRectList, PdfCanvas canvas, SignatureConfig config, List<FileInfo> signatureList) throws MalformedURLException {
+        Map<String, com.poc.pdf.model.Rectangle> blankRectNeedTextMap = new HashMap<>();
+        if (config.getSignatureMax() < 1) {
+            return new ArrayList(blankRectNeedTextMap.values());
+        }
+        List<RectPoint> pointRectList = new ArrayList<>();
+        for (com.poc.pdf.model.Rectangle temp : blankRectList.values()) {
+            List<Point> pList = randomStartPoint(temp, config);
+            if (CollectionUtils.isNotEmpty(pList)) {
+                pointRectList.addAll(createPoint(pList, temp));
+            } else {
+                blankRectNeedTextMap.put(temp.getName(), temp);
+            }
+        }
+        int max = config.getSignatureMax();
+        if (max > pointRectList.size()) {
+            max = pointRectList.size();
+        }
+        int rd = TableUtil.randomRange(max, config.getSignatureMin());
+        Collections.shuffle(pointRectList);
 
-        };
-        int index = (int) (rd % fontArr.length - 1);
-        return fontArr[index];
+        List<Point> pointList = new ArrayList<>();
+        List<String> markedSignRect = new ArrayList<>();
+        for (int i = 0; i < pointRectList.size(); i++) {
+            RectPoint rp = pointRectList.get(i);
+            if (i < rd) {
+                pointList.add(rp.point);
+                markedSignRect.add(rp.rect.getName());
+            } else {
+                if (!markedSignRect.contains(rp.rect.getName())) {
+                    blankRectNeedTextMap.put(rp.rect.getName(), rp.rect);
+                }
+            }
+        }
+
+        drawSelectedImage(pointList, signatureList, canvas, config);
+
+        return new ArrayList(blankRectNeedTextMap.values());
+    }
+
+    public static List<RectPoint> createPoint(List<Point> pList, com.poc.pdf.model.Rectangle rect) {
+        List<RectPoint> pointRectList = new ArrayList<>(pList.size());
+        for (Point point : pList) {
+            pointRectList.add(new RectPoint(rect, point));
+        }
+        return pointRectList;
+    }
+
+    static class RectPoint {
+        com.poc.pdf.model.Rectangle rect;
+        Point point;
+
+        public RectPoint(com.poc.pdf.model.Rectangle rect, Point point) {
+            this.rect = rect;
+            this.point = point;
+        }
+
+        public com.poc.pdf.model.Rectangle getRect() {
+            return rect;
+        }
+
+        public void setRect(com.poc.pdf.model.Rectangle rect) {
+            this.rect = rect;
+        }
+
+        public Point getPoint() {
+            return point;
+        }
+
+        public void setPoint(Point point) {
+            this.point = point;
+        }
     }
 
 }

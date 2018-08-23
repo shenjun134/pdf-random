@@ -30,7 +30,36 @@ public class RectangleLine {
         lineList.add(right);
         lineList.add(bottom);
         lineList.add(left);
+    }
 
+    public RectangleLine(Rectangle rectangle, int offsite) {
+        this.rectangle = rectangle;
+        Point a = rectangle.getPoint1();
+        Point c = rectangle.getPoint2();
+        Point b = new Point(c.getX(), a.getY());
+        Point d = new Point(a.getX(), c.getY());
+
+        a.setX(a.getX() + offsite);
+        a.setY(a.getY() + offsite);
+
+        b.setX(b.getX() - offsite);
+        b.setY(b.getY() + offsite);
+
+        c.setX(c.getX() - offsite);
+        c.setY(c.getY() - offsite);
+
+        d.setX(d.getX() + offsite);
+        d.setY(d.getY() - offsite);
+
+        top = new Line(a, b);
+        right = new Line(b, c);
+        bottom = new Line(c, d);
+        left = new Line(d, a);
+
+        lineList.add(top);
+        lineList.add(right);
+        lineList.add(bottom);
+        lineList.add(left);
     }
 
     public List<Line> getLineList() {
