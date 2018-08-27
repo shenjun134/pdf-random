@@ -2,6 +2,7 @@ package com.poc.pdf.util;
 
 import com.poc.pdf.model.FileInfo;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -10,6 +11,7 @@ import org.apache.log4j.Logger;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,6 +69,29 @@ public class FileUtil {
                 }
             }
             tempImageFile.delete();
+        }
+    }
+
+    public static byte[] readBytes(String path) {
+        File tempImageFile = new File(path);
+        FileInputStream fis = null;
+        try {
+//            fis = new FileInputStream(tempImageFile);
+            return Files.readAllBytes(tempImageFile.toPath());
+        } catch (FileNotFoundException e) {
+            logger.error("image not found", e);
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            logger.error("read image error", e);
+            throw new RuntimeException(e);
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    logger.error("image close error", e);
+                }
+            }
         }
     }
 

@@ -2,7 +2,6 @@ package com.poc.pdf.base;
 
 import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -11,10 +10,12 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
 import com.poc.pdf.util.FileUtil;
+import com.poc.pdf.util.FontUtil;
 import com.poc.pdf.util.PDFUtil;
 import com.poc.pdf.util.TableUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -142,7 +143,7 @@ public class TableLines extends BaseLine {
 
             String fontFamily = structure.getFontFamily();
             canvas.beginText()
-                    .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                    .setFontAndSize(FontUtil.createFont(fontFamily), fontSize)
 //                    .setStrokeColor(TableUtil.randomColor())
 //                    .setColor(TableUtil.randomColor(), false)
                     .setLeading(leadingSize)
@@ -224,7 +225,7 @@ public class TableLines extends BaseLine {
         String fontFamily = TableUtil.fontProgramNoneBold();
         int bottomX = config.getPaddingLeft() - padding;
         int bottomY = (int) (rowRd * 1 * leadingSize) + padding;
-        PdfFont baseFont = PdfFontFactory.createFont(fontFamily);
+        PdfFont baseFont = FontUtil.createFont(fontFamily);
         canvas.beginText()
                 .setFontAndSize(baseFont, fontSize)
                 .setLeading(leadingSize)
@@ -262,11 +263,11 @@ public class TableLines extends BaseLine {
         int row = (int) ((top - padding) / leadingSizeTop);
         int rowRd = TableUtil.randomRange(row, 3);
 
-        String header = fileName.toUpperCase() + " ---- " + new Date();
+        String header = fileName.toUpperCase() + " ---- " + DateFormatUtils.format(new Date(), GridLines.Const.dateFormat);
         String fontFamilyTop = TableUtil.fontProgramSoft();
         int topX = config.getPaddingLeft() + 2 * padding;
         int topY = config.getTotalHeight() - padding;
-        PdfFont baseFont = PdfFontFactory.createFont(fontFamilyTop);
+        PdfFont baseFont = FontUtil.createFont(fontFamilyTop);
         canvas.beginText()
                 .setFontAndSize(baseFont, fontSizeTop)
                 .setLeading(leadingSizeTop)
@@ -274,7 +275,7 @@ public class TableLines extends BaseLine {
         canvas.newlineShowText(header);
         float maxLength = 0;
         for (int i = 1; i < rowRd; i++) {
-            String temp = TableUtil.randomText(gridWidth / 1, fontSizeTop);
+            String temp = TableUtil.randomText((int) (gridWidth / 1.5f), fontSizeTop);
             float length = baseFont.getWidth(temp, fontSizeTop);
             if (length > maxLength) {
                 maxLength = length;
@@ -319,7 +320,7 @@ public class TableLines extends BaseLine {
 
     private static void showVerticalText(int x, int y, String text, PdfCanvas canvas, String fontFamily, int fontSize, float leadingSize) throws IOException {
         canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setFontAndSize(FontUtil.createFont(fontFamily), fontSize)
                 .setLeading(leadingSize)
                 .moveText(x, y);
         int size = text.length();

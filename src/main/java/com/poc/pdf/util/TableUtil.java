@@ -608,7 +608,7 @@ public class TableUtil {
 
         PdfFont baseFont;
         try {
-            baseFont = PdfFontFactory.createFont(structure.getFontFamily());
+            baseFont = FontUtil.createFont(structure.getFontFamily());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -811,56 +811,15 @@ public class TableUtil {
     }
 
     public static String fontProgram() {
-        double rd = Math.random() * 1000;
-        String[] fontArr = new String[]{
-                FontConstants.COURIER,
-                FontConstants.COURIER_BOLD,
-                FontConstants.COURIER_OBLIQUE,
-                FontConstants.COURIER_BOLDOBLIQUE,
-                FontConstants.HELVETICA,
-                FontConstants.HELVETICA_BOLD,
-                FontConstants.HELVETICA_OBLIQUE,
-                FontConstants.HELVETICA_BOLDOBLIQUE,
-                FontConstants.SYMBOL,
-                FontConstants.TIMES_ROMAN,
-                FontConstants.TIMES_BOLD,
-                FontConstants.TIMES_ITALIC,
-                FontConstants.TIMES_BOLDITALIC,
-//                FontConstants.ZAPFDINGBATS,
-                FontConstants.TIMES
-
-        };
-        int index = (int) (rd % fontArr.length - 1);
-        return fontArr[index];
+        return FontUtil.fontProgram();
     }
 
     public static String fontProgramNoneBold() {
-        double rd = Math.random() * 1000;
-        String[] fontArr = new String[]{
-                FontConstants.COURIER,
-                FontConstants.COURIER_OBLIQUE,
-                FontConstants.HELVETICA,
-                FontConstants.HELVETICA_OBLIQUE,
-                FontConstants.SYMBOL,
-                FontConstants.TIMES_ROMAN,
-                FontConstants.TIMES_ITALIC,
-                FontConstants.TIMES
-
-        };
-        int index = (int) (rd % fontArr.length - 1);
-        return fontArr[index];
+        return FontUtil.fontProgramNoneBold();
     }
 
     public static String fontProgramSoft() {
-        double rd = Math.random() * 1000;
-        String[] fontArr = new String[]{
-                FontConstants.TIMES_ROMAN,
-                FontConstants.TIMES_ITALIC,
-                FontConstants.TIMES
-
-        };
-        int index = (int) (rd % fontArr.length - 1);
-        return fontArr[index];
+        return FontUtil.fontProgramSoft();
     }
 
     public static Color randomColor() {
@@ -1034,6 +993,7 @@ public class TableUtil {
         builder.append(blank(2)).append("</size>").append(enter);
         builder.append(blank(2)).append("<segmented>0</segmented>").append(enter);
         TableStructureText tableStructureText = new TableStructureText();
+        tableStructureText.getText().append("------font-family:").append(structure.getFontFamily()).append(enter);
         for (TableCell cell : structure.getCellList()) {
             appendCell(cell, builder);
             getCellText(cell, tableStructureText);

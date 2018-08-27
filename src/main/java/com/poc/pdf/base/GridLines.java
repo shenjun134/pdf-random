@@ -1,7 +1,6 @@
 package com.poc.pdf.base;
 
 import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -9,10 +8,7 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
-import com.poc.pdf.util.FileUtil;
-import com.poc.pdf.util.GridLayoutUtil;
-import com.poc.pdf.util.PDFUtil;
-import com.poc.pdf.util.TableUtil;
+import com.poc.pdf.util.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.log4j.Logger;
@@ -151,7 +147,7 @@ public class GridLines extends BaseLine {
 
         String fontFamily = TableUtil.fontProgram();
         canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setFontAndSize(FontUtil.createFont(fontFamily), fontSize)
                 .setLeading(leadingSize)
                 .moveText(x, y);
         for (String text : textList) {
@@ -224,7 +220,7 @@ public class GridLines extends BaseLine {
         String fontFamily = TableUtil.fontProgram();
         int bottomX = config.getPaddingLeft() - padding;
         int bottomY = 2 * fontSize;
-        PdfFont baseFont = PdfFontFactory.createFont(fontFamily);
+        PdfFont baseFont = FontUtil.createFont(fontFamily);
         canvas.beginText()
                 .setFontAndSize(baseFont, fontSize)
                 .setLeading(leadingSize)
@@ -273,7 +269,7 @@ public class GridLines extends BaseLine {
         String fontFamilyTop = TableUtil.fontProgramSoft();
         int topX = result.getPaddingLeft() + 2 * padding;
         int topY = config.getTotalHeight() - padding;
-        PdfFont baseFont = PdfFontFactory.createFont(fontFamilyTop);
+        PdfFont baseFont = FontUtil.createFont(fontFamilyTop);
         String header2 = getLimitMsg(baseFont, header, gridWidth, fontSizeTop);
         String header3 = getLimitMsg(baseFont, header, gridWidth, fontSizeTop);
         canvas.beginText()
@@ -348,7 +344,7 @@ public class GridLines extends BaseLine {
         int leftX = 1 * fontSize;
         int leftY = config.getTotalHeight() - 2 * padding;
         canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setFontAndSize(FontUtil.createFont(fontFamily), fontSize)
                 .setLeading(leadingSize)
                 .moveText(leftX, leftY);
         int size = leftText.length();
@@ -383,7 +379,7 @@ public class GridLines extends BaseLine {
         int leftX = config.getTotalWidth() - 2 * fontSize;
         int leftY = config.getTotalHeight() - 2 * padding;
         canvas.beginText()
-                .setFontAndSize(PdfFontFactory.createFont(fontFamily), fontSize)
+                .setFontAndSize(FontUtil.createFont(fontFamily), fontSize)
                 .setLeading(leadingSize)
                 .moveText(leftX, leftY);
         int size = leftText.length();
