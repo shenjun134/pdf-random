@@ -71,6 +71,8 @@ public class TableStructure extends ToString {
 
     private List<Line> lineList = new ArrayList<>();
 
+    private List<MockHead> mockHeadList = new ArrayList<>();
+
     public Point getStartPoint() {
         return startPoint;
     }
@@ -326,5 +328,13 @@ public class TableStructure extends ToString {
 
     public void setRightTextRect(Rectangle rightTextRect) {
         this.rightTextRect = rightTextRect;
+    }
+
+    public List<MockHead> getMockHeadList() {
+        return mockHeadList;
+    }
+
+    public void setMockHeadList(List<MockHead> mockHeadList) {
+        this.mockHeadList = mockHeadList;
     }
 }

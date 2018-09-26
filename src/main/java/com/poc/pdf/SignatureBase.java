@@ -2,6 +2,7 @@ package com.poc.pdf;
 
 import com.poc.pdf.base.FontTest;
 import com.poc.pdf.base.GridLines;
+import com.poc.pdf.base.NormalTableLines;
 import com.poc.pdf.base.TableLines;
 import org.apache.commons.lang.StringUtils;
 
@@ -10,8 +11,8 @@ import java.io.IOException;
 public class SignatureBase {
 
     public static void main(String[] args) throws IOException {
-//        args = new String[]{"table"};
-//        args = new String[]{"grid"};
+        args = new String[]{"table"};
+        args = new String[]{"grid"};
 //        args = new String[]{"font-test"};
         process(args);
     }
@@ -24,6 +25,11 @@ public class SignatureBase {
         if (StringUtils.equalsIgnoreCase("table", type.trim())) {
             System.out.println("begin to random table layout");
             TableLines.process();
+            return;
+        }
+        if (StringUtils.equalsIgnoreCase("normal-table", type.trim())) {
+            System.out.println("begin to random normal-table layout");
+            NormalTableLines.process();
             return;
         }
         if (StringUtils.equalsIgnoreCase("grid", type.trim())) {

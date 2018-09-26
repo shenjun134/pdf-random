@@ -9,10 +9,7 @@ import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
-import com.poc.pdf.util.FileUtil;
-import com.poc.pdf.util.FontUtil;
-import com.poc.pdf.util.PDFUtil;
-import com.poc.pdf.util.TableUtil;
+import com.poc.pdf.util.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -24,27 +21,26 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class TableLines extends BaseLine {
+public class NormalTableLines extends BaseLine {
 
     /**
      * logger
      */
-    private static final Logger logger = Logger.getLogger(TableLines.class);
+    private static final Logger logger = Logger.getLogger(NormalTableLines.class);
 
 
     public static final String TYPE = ".pdf";
 
     interface Const {
-        String layoutName = "./table/";
+        String layoutName = "./normal-table/";
 
-        //        String prefix = "type-";
         String prefix = "";
     }
 
     public static void process() throws IOException {
         File file = new File(Const.layoutName);
         file.getParentFile().mkdirs();
-        TableLayoutConfig config = new TableLayoutConfig("table-layout.properties");
+        TableLayoutConfig config = new TableLayoutConfig("normal-table-layout.properties");
         List<List<TableStructure>> listInList = new ArrayList<>();
 
         int size = config.getNumberOfCategory() * config.getEachCategoryTotal();
@@ -53,9 +49,11 @@ public class TableLines extends BaseLine {
 
         List<FileInfo> signatureList = FileUtil.loadDirImages(config.getSignatureDir());
 
+        MockData mockData = MockDataUtil.parseMockData("mock-data.txt");
+
         for (int index = 0; index < config.getNumberOfCategory(); index++) {
             int begin = index * config.getDistance() + config.getBeginAt();
-            List<TableStructure> resultList = getResult(config);
+            List<TableStructure> resultList = getResult(config, mockData);
             listInList.add(resultList);
             String beginStr = StringUtils.leftPad("" + begin, 6, "0");
             String path = Const.layoutName + Const.prefix + beginStr + "/";
@@ -74,7 +72,7 @@ public class TableLines extends BaseLine {
 
                 fileNames.add(new FileInfo(fileName, path, TYPE));
 
-                createPdf(fullPath, fileName, config, temp, signatureList);
+                createPdf(fullPath, fileName, config, temp, signatureList, mockData);
 
                 TableStructureText structureText = TableUtil.structure2Xml(temp, offsiteStr, config);
                 String xmlFullPath = path + fileName + ".xml";
@@ -108,16 +106,16 @@ public class TableLines extends BaseLine {
         process();
     }
 
-    public static List<TableStructure> getResult(TableLayoutConfig config) {
+    public static List<TableStructure> getResult(TableLayoutConfig config, MockData mockData) {
         List<TableStructure> resultList = new ArrayList<>();
-        TableStructure structure = TableUtil.getFulfillStructure(config);
+        TableStructure structure = TableUtil.getNormalStructure(config, mockData);
         for (int i = 0; i < config.getEachCategoryTotal(); i++) {
             resultList.add(structure);
         }
         return resultList;
     }
 
-    public static void createPdf(String dest, String fileName, TableLayoutConfig config, TableStructure structure, List<FileInfo> signatureList) throws IOException {
+    public static void createPdf(String dest, String fileName, TableLayoutConfig config, TableStructure structure, List<FileInfo> signatureList, MockData mockData) throws IOException {
         //Initialize PDF document
         PdfWriter writer = new PdfWriter(dest);
         PdfDocument pdf = new PdfDocument(writer);
@@ -137,7 +135,7 @@ public class TableLines extends BaseLine {
         for (TableCell rectangle : structure.getCellList()) {
             int fontSize = structure.getFontSize();
             float leadingSize = structure.getLineHeight();
-            List<String> textList = TableUtil.randomString(rectangle, fontSize, config);
+            List<String> textList = getText(structure, mockData, rectangle, config);
             int x = rectangle.getReal1(config.getTotalHeight()).getX() + structure.getCellLeftPadding();
             int y = rectangle.getReal1(config.getTotalHeight()).getY() - structure.getCellTopPadding();
 
@@ -179,6 +177,33 @@ public class TableLines extends BaseLine {
 
         //Close document
         pdf.close();
+    }
+
+    private static List<String> getText(TableStructure structure, MockData mockData, TableCell rectangle, TableLayoutConfig config) {
+        List<String> list = new ArrayList<>();
+        int col = rectangle.getCol();
+        int row = rectangle.getRow();
+        int size = structure.getMockHeadList().size();
+        if (size < col + 1) {
+            logger.warn("unknown col: " + col + ", head size:" + size);
+            list.add(config.getBlankFillString());
+            return list;
+        }
+        MockHead head = structure.getMockHeadList().get(col);
+        if (row == 0) {
+            list.add(head.getName());
+            return list;
+        }
+        int rowSize = mockData.getValueList().size();
+        int rd = TableUtil.randomRange(rowSize, 1);
+        String txt = mockData.getValueList().get(rd).get(head.getIndex());
+        if (StringUtils.isNotBlank(txt)) {
+            list.add(txt);
+        }
+        if (StringUtils.isBlank(txt) && !config.isBlankFillDisable()) {
+            list.add(config.getBlankFillString());
+        }
+        return list;
     }
 
 
@@ -405,7 +430,6 @@ public class TableLines extends BaseLine {
         }
         drawImage(pointList, signatureList, canvas, config);
     }
-
 
     private static com.poc.pdf.model.Rectangle getBlankTopRect(TableLayoutConfig config, TableStructure structure) {
         Point point1 = new Point();

@@ -1,9 +1,7 @@
 package com.poc.pdf.util;
 
-import com.itextpdf.io.font.FontConstants;
 import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
 import com.poc.pdf.model.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -25,6 +23,7 @@ public class TableUtil {
     interface Const {
         int baseFont = 16;
         int unitCharLength = 10;
+        int unitCharWidth = 10;
         int unitCharHeight = 18;
         int offsiteX = 5;
         int offsiteY = 3;
@@ -35,9 +34,9 @@ public class TableUtil {
         int defRetry = 3;
 
         int markRectOffLeft = -2;
-        int markRectOffBottom = -2;
+        int markRectOffBottom = 8;
         int markRectOffRight = 2;
-        int markRectOffTop = 6;
+        int markRectOffTop = 4;
 
         String enter = "\n";
 
@@ -389,7 +388,7 @@ public class TableUtil {
 
 
     public static TableStructure getTableStructure() {
-        TableLayoutConfig config = new TableLayoutConfig();
+        TableLayoutConfig config = new TableLayoutConfig("table-layout.properties");
         System.out.println("--------------config---------------");
         System.out.println(config);
         return getFulfillStructure(config);
@@ -407,6 +406,172 @@ public class TableUtil {
             return structure;
         }
         return getFulfillStructure(config);
+    }
+
+    /**
+     * @param config
+     * @param mockData
+     * @return
+     */
+    public static TableStructure getNormalStructure(TableLayoutConfig config, MockData mockData) {
+        TableStructure structure = randomNormalStructure(config, mockData);
+        int colSize = structure.getCellWidthList().size();
+        int rowSize = structure.getCellHeightList().size();
+        if (colSize >= config.getCellColumnLimit() && rowSize >= config.getCellRowLimit()) {
+            return structure;
+        }
+        return getNormalStructure(config, mockData);
+    }
+
+    public static TableStructure randomNormalStructure(TableLayoutConfig config, MockData mockData) {
+        TableStructure structure = new TableStructure();
+        boolean noiseTop = randomTF(config.getNoiseTopProbability());
+        boolean noiseBottom = randomTF(config.getNoiseBottomProbability());
+        boolean noiseLeft = randomTF(config.getNoiseLeftProbability());
+        boolean noiseRight = randomTF(config.getNoiseRightProbability());
+
+        int borderWidth = randomRange(config.getBorderMaxWidth(), config.getBorderMinWidth());
+        int innerBorderWidth = randomRange(config.getBorderMaxWidth(), config.getBorderMinWidth());
+        if (borderWidth - innerBorderWidth != 0) {
+            logger.warn("border diff - borderWidth:" + borderWidth + ", innerBorderWidth:" + innerBorderWidth);
+        }
+        structure.setInnerBorderWidth(innerBorderWidth);
+
+//        boolean isMerge = randomTF(config.getMergeProbability());
+        boolean isMerge = false;
+        int fontSize = fontSize();
+        float lintHeight = fontSize * Const.lineHeightPer;
+        String fontFamily = fontProgram();
+
+        Point startPoint = randomPoint(config);
+
+        int cellMinWidth = config.getCellMinWidth() + config.getCellPaddingLeft() + config.getCellPaddingRight();
+        int cellMinHeight = config.getCellMinHeight() + config.getCellPaddingBottom() + config.getCellPaddingTop();
+
+//        List<Integer> widthList = randomInt(widthRange, config.getCellPaddingLeft(), config.getCellPaddingRight(), widthBase, (int) (fontMutl * cellMinWidth));
+//        List<Integer> heightList = randomInt(heightRange, config.getCellPaddingTop(), config.getCellPaddingBottom(), heightBase, (int) (fontMutl * cellMinHeight));
+
+//        int tableWidth = sum(widthList);
+//        int tableHeight = sum(heightList);
+        /*******************************setter*********************************/
+        structure.setStartPoint(startPoint);
+
+        structure.setBorderWidth(borderWidth);
+
+        structure.setCellMinWidth(cellMinWidth);
+        structure.setCellMinHeight(cellMinHeight);
+
+        structure.setFontSize(fontSize);
+        structure.setLineHeight(lintHeight);
+        structure.setFontFamily(fontFamily);
+
+//        structure.setTableWidth(tableWidth);
+//        structure.setTableHeight(tableHeight);
+
+        structure.setCellLeftPadding(config.getCellPaddingLeft());
+        structure.setCellRightPadding(config.getCellPaddingRight());
+        structure.setCellTopPadding(config.getCellPaddingTop());
+        structure.setCellBottomPadding(config.getCellPaddingBottom());
+
+        structure.setMergeCell(isMerge);
+
+//        structure.setCellWidthList(widthList);
+//        structure.setCellHeightList(heightList);
+
+        structure.setNoiseTop(noiseTop);
+        structure.setNoiseBottom(noiseBottom);
+        structure.setNoiseLeft(noiseLeft);
+        structure.setNoiseRight(noiseRight);
+
+        /**
+         * random cell array and line
+         */
+        randomCellArray(config, structure, mockData);
+
+        /**
+         * generate cell
+         */
+        generateCell(structure);
+
+        /**
+         * generate line
+         */
+        generateLine(structure);
+        return structure;
+    }
+
+    /**
+     * random cell array , like 4*5
+     * width array, height array, head column position list,
+     *
+     * @param structure
+     * @param mockData
+     */
+    public static void randomCellArray(TableLayoutConfig config, TableStructure structure, MockData mockData) {
+
+        Point startPoint = structure.getStartPoint();
+        int fontSize = structure.getFontSize();
+        double lintHeight = structure.getLineHeight();
+        int widthRange = config.getTotalWidth() - startPoint.getX() - config.getPaddingRight();
+        int heightRange = config.getTotalHeight() - startPoint.getY() - config.getPaddingBottom();
+
+//        int widthBase = fontSize > config.getCellMinWidth() ? fontSize : config.getCellMinWidth();
+        int heightBase = lintHeight > config.getCellMinHeight() ? (int) lintHeight : config.getCellMinHeight();
+        List<MockHead> rdHead = getRandomHead(widthRange, structure, mockData);
+        List<Integer> widthList = new ArrayList<>(rdHead.size());
+        float fontBaseWidth = (1.0f * fontSize) / Const.baseFont * Const.unitCharWidth;
+        float blankWidth = structure.getCellLeftPadding() + structure.getCellRightPadding() + cellBlankOff();
+        for (MockHead mockHead : rdHead) {
+            float cellW = mockHead.getMaxLenght() * fontBaseWidth + blankWidth;
+            widthList.add((int) cellW);
+        }
+        int rowHeight = (int) (structure.getCellTopPadding() + structure.getCellBottomPadding() + cellBlankHOff() + heightBase);
+        int totalR = (int) (heightRange / rowHeight) - 3;
+        List<Integer> heightList = new ArrayList<>(totalR);
+        for (int i = 0; i < totalR; i++) {
+            heightList.add(rowHeight);
+        }
+        int tableWidth = sum(widthList);
+        int tableHeight = sum(heightList);
+        structure.setTableHeight(tableHeight);
+        structure.setTableWidth(tableWidth);
+        structure.setCellWidthList(widthList);
+        structure.setCellHeightList(heightList);
+        structure.setMockHeadList(rdHead);
+    }
+
+    public static int cellBlankOff() {
+        return 5;
+    }
+
+    public static int cellBlankHOff() {
+        return 5;
+    }
+
+    public static List<MockHead> getRandomHead(int widthRange, TableStructure structure, MockData mockData) {
+        int fontSize = structure.getFontSize();
+        float fontBaseWidth = (1.0f * fontSize) / Const.baseFont * Const.unitCharWidth;
+        List<MockHead> copyHead = MockDataUtil.copyShuffle(mockData.getHeadList());
+        int minCol = 5;
+        int maxCol = minCol;
+        float blankWidth = structure.getCellLeftPadding() + structure.getCellRightPadding() + cellBlankOff();
+
+        float temp = 0;
+        for (int i = 0, len = copyHead.size(); i < len; i++) {
+            MockHead head = copyHead.get(i);
+            float tmpWidth = fontBaseWidth * (head.getMaxLenght()) + blankWidth;
+            temp += tmpWidth;
+            maxCol = i + 1;
+            if (temp > widthRange) {
+                maxCol = maxCol - 1;
+                break;
+            }
+        }
+        if (minCol > maxCol) {
+            minCol = maxCol;
+        }
+        int rd = randomRange(maxCol, minCol);
+        return copyHead.subList(0, rd);
     }
 
 
@@ -879,7 +1044,7 @@ public class TableUtil {
      * @return
      */
     public static List<Line> randomLine(int maxCount, int width, int height, int borderMax) {
-        int rdCount = randomRange(maxCount, 1);
+        int rdCount = randomRange(maxCount, 0);
         List<Line> list = new ArrayList<>();
         for (int i = 0; i < rdCount; i++) {
             Line line = randomLine(width, height, borderMax);
@@ -1035,7 +1200,7 @@ public class TableUtil {
     }
 
     public static void main(String[] args) {
-        TableLayoutConfig config = new TableLayoutConfig();
+        TableLayoutConfig config = new TableLayoutConfig("table-layout.properties");
         for (int i = 0; i < 100; i++) {
             TableStructure structure = getFulfillStructure(config);
             structure.printLayout();

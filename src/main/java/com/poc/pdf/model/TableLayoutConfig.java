@@ -31,6 +31,8 @@ public class TableLayoutConfig extends SignatureConfig {
         int signatureHeight = 80;
 
         int signatureMax = 10;
+
+        String blankStr = "NA";
     }
 
 
@@ -104,10 +106,16 @@ public class TableLayoutConfig extends SignatureConfig {
 
     private boolean showRectangleInfo;
 
+    private boolean blankFillDisable;
 
-    public TableLayoutConfig() {
+    private String blankFillString;
+
+
+
+
+    public TableLayoutConfig(String propName) {
+//        String propName = "table-layout.properties";
         String userDir = System.getProperty("user.dir");
-        String propName = "table-layout.properties";
         Properties properties = new Properties();
         File file = new File(userDir + "/" + propName);
         InputStream fileInputStream = null;
@@ -225,6 +233,13 @@ public class TableLayoutConfig extends SignatureConfig {
         }
 
         this.showRectangleInfo = Boolean.valueOf(properties.get("show.rectangle.info").toString());
+
+        Object blankFillDisable = properties.get("blank.fill.disable");
+        Object blankFillString = properties.get("blank.fill.string");
+        if (blankFillDisable != null) {
+            this.blankFillDisable = Boolean.valueOf(blankFillDisable.toString());
+        }
+        this.blankFillString = blankFillString != null ? blankFillString.toString() : Const.blankStr;
 
         this.borderColor = new DeviceRgb(this.borderColorR, this.borderColorG, this.borderColorB);
         this.markBorderColor = new DeviceRgb(this.markBorderColorR, this.markBorderColorG, this.markBorderColorB);
@@ -446,5 +461,21 @@ public class TableLayoutConfig extends SignatureConfig {
 
     public void setNoiseTableProbability(int noiseTableProbability) {
         this.noiseTableProbability = noiseTableProbability;
+    }
+
+    public boolean isBlankFillDisable() {
+        return blankFillDisable;
+    }
+
+    public void setBlankFillDisable(boolean blankFillDisable) {
+        this.blankFillDisable = blankFillDisable;
+    }
+
+    public String getBlankFillString() {
+        return blankFillString;
+    }
+
+    public void setBlankFillString(String blankFillString) {
+        this.blankFillString = blankFillString;
     }
 }
