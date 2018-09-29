@@ -3,6 +3,8 @@ package com.poc.pdf.model;
 
 import com.itextpdf.kernel.color.Color;
 
+import java.util.List;
+
 public class SignatureConfig extends ToString {
 
     protected int totalWidth;
@@ -55,6 +57,14 @@ public class SignatureConfig extends ToString {
     protected int noiseLeftProbability;
     protected int noiseRightProbability;
     protected int noiseTopProbability;
+
+    protected String mockDataPath;
+
+    protected boolean mockDataHeadShuffle;
+
+    protected List<String> fixedStructureJsonList;
+
+    protected boolean fixedStructureEnable;
 
     public int getTotalWidth() {
         return totalWidth;
@@ -278,5 +288,37 @@ public class SignatureConfig extends ToString {
 
     public void setNoiseTopProbability(int noiseTopProbability) {
         this.noiseTopProbability = noiseTopProbability;
+    }
+
+    public String getMockDataPath() {
+        return mockDataPath;
+    }
+
+    public void setMockDataPath(String mockDataPath) {
+        this.mockDataPath = mockDataPath;
+    }
+
+    public boolean isMockDataHeadShuffle() {
+        return mockDataHeadShuffle;
+    }
+
+    public void setMockDataHeadShuffle(boolean mockDataHeadShuffle) {
+        this.mockDataHeadShuffle = mockDataHeadShuffle;
+    }
+
+    public List<String> getFixedStructureJsonList() {
+        return fixedStructureJsonList;
+    }
+
+    public void setFixedStructureJsonList(List<String> fixedStructureJsonList) {
+        this.fixedStructureJsonList = fixedStructureJsonList;
+    }
+
+    public boolean isFixedStructureEnable() {
+        return fixedStructureEnable;
+    }
+
+    public void setFixedStructureEnable(boolean fixedStructureEnable) {
+        this.fixedStructureEnable = fixedStructureEnable;
     }
 }

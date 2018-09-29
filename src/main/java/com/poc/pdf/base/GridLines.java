@@ -10,6 +10,8 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
 import com.poc.pdf.util.*;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.log4j.Logger;
 
@@ -47,8 +49,17 @@ public class GridLines extends BaseLine {
 
         List<FileInfo> signatureList = FileUtil.loadDirImages(config.getSignatureDir());
 
+        int size = config.getNumberOfCategory() * config.getEachCategoryTotal();
+
+        List<FileInfo> fileNames = new ArrayList<>(size);
+        List<String> structureJsonList = getStructureJsonList(config);
+
         for (int index = 0; index < config.getNumberOfCategory(); index++) {
-            List<GridLayoutResult> resultList = getResult(config);
+            String structureJson = null;
+            if (structureJsonList != null && structureJsonList.size() - 1 >= index) {
+                structureJson = structureJsonList.get(index);
+            }
+            List<GridLayoutResult> resultList = getResult(config, structureJson);
             listInList.add(resultList);
             String path = Const.layoutName + "type-" + index + "/";
             File tempFile = new File(path);
@@ -58,31 +69,81 @@ public class GridLines extends BaseLine {
                 GridLayoutResult temp = resultList.get(i);
                 String fileName = "type-" + index + "-" + i;
                 String fullPath = path + fileName + TYPE;
+                fileNames.add(new FileInfo(fileName, path, TYPE));
                 createPdf(fullPath, fileName, config, temp, signatureList);
+
+                GridStructureText structureText = TableUtil.structure2Xml(temp, fileName, config);
+                String xmlFullPath = path + fileName + ".xml";
+                String txtFullPath = path + fileName + ".txt";
+                String jsonFullPath = path + fileName + ".json";
+
+                FileUtil.write(structureText.getStructureXml(), xmlFullPath);
+                FileUtil.write(structureText.getText().toString(), txtFullPath);
+                FileUtil.write(structureText.getJson().toString(), jsonFullPath);
             }
         }
 
-        for (int index = 0; index < config.getNumberOfCategory(); index++) {
-            String path = Const.layoutName + "type-" + index + "/";
-            List<GridLayoutResult> resultList = listInList.get(index);
-            for (int i = 0; i < resultList.size(); i++) {
-                String fileName = "type-" + index + "-" + i;
-                String fullPath = path + fileName + TYPE;
-
-                String originalPdf = fullPath;
-                PDFUtil.splitPdf2Jpg(originalPdf, path, 72);
-            }
+        for (FileInfo fileInfo : fileNames) {
+            String fullPath = fileInfo.getParentPath() + fileInfo.getFileName() + fileInfo.getType();
+            String originalPdf = fullPath;
+            PDFUtil.splitPdf2Jpg(originalPdf, fileInfo.getParentPath(), 72);
         }
+
+//        for (int index = 0; index < config.getNumberOfCategory(); index++) {
+//            String path = Const.layoutName + "type-" + index + "/";
+//            List<GridLayoutResult> resultList = listInList.get(index);
+//            for (int i = 0; i < resultList.size(); i++) {
+//                String fileName = "type-" + index + "-" + i;
+//                String fullPath = path + fileName + TYPE;
+//
+//                String originalPdf = fullPath;
+//                PDFUtil.splitPdf2Jpg(originalPdf, path, 72);
+//            }
+//        }
 
     }
 
-    public static List<GridLayoutResult> getResult(GridLayoutConfig config) {
+
+    /**
+     * @param config
+     * @return
+     */
+    public static List<String> getStructureJsonList(GridLayoutConfig config) {
+        List<String> jsonList = new ArrayList<>();
+        if (config.isFixedStructureEnable() && CollectionUtils.isNotEmpty(config.getFixedStructureJsonList())) {
+            for (String jsonPath : config.getFixedStructureJsonList()) {
+                try {
+                    String json = FileUtils.readFileToString(new File(jsonPath));
+                    jsonList.add(json);
+                } catch (IOException e) {
+                    logger.error("cannot find " + jsonPath + e);
+                }
+            }
+        }
+        return jsonList;
+    }
+
+    public static List<GridLayoutResult> getResult(GridLayoutConfig config, String structureJson) {
         List<GridLayoutResult> resultList = new ArrayList<>();
         config.getSplitConfigList().clear();
-        GridLayoutResult result = GridLayoutUtil.randomGrid(config);
+
+        GridLayoutResult result;
+        if (config.isFixedStructureEnable() && StringUtils.isNotBlank(structureJson)) {
+            result = TableUtil.Const.gson.fromJson(structureJson, GridLayoutResult.class);
+        } else {
+            result = GridLayoutUtil.randomGrid(config);
+            randomBlank(result, config);
+        }
 //        result.printRect();
         for (int i = 0; i < config.getEachCategoryTotal(); i++) {
-            resultList.add(result);
+            GridLayoutResult temp = new GridLayoutResult();
+            temp.setPaddingRight(result.getPaddingRight());
+            temp.setPaddingLeft(result.getPaddingLeft());
+            temp.setPaddingBottom(result.getPaddingBottom());
+            temp.setPaddingTop(result.getPaddingTop());
+            temp.setLineList(result.getLineList());
+            temp.setRectList(result.getRectList());
+            resultList.add(temp);
 //            GridLayoutResult temp = GridLayoutUtil.splitLoop(config);
 //            resultList.add(temp);
 //            temp.printRect();
@@ -108,13 +169,13 @@ public class GridLines extends BaseLine {
         canvas.stroke();
         int padding = 20;
         //fill in text
-        Map<String, com.poc.pdf.model.Rectangle> blankMap = randomBlank(result, config);
+        Map<String, com.poc.pdf.model.Rectangle> blankMap = getBlank(result);
 
         for (com.poc.pdf.model.Rectangle rectangle : result.getRectList()) {
             if (rectangle.isSplit()) {
                 continue;
             }
-            if (blankMap.containsKey(rectangle.getName())) {
+            if (rectangle.isBlank()) {
                 continue;
             }
             writeText(rectangle, config, padding, canvas);
@@ -166,7 +227,7 @@ public class GridLines extends BaseLine {
      * @param config
      * @return
      */
-    private static Map<String, com.poc.pdf.model.Rectangle> randomBlank(GridLayoutResult result, SignatureConfig config) {
+    private static void randomBlank(GridLayoutResult result, SignatureConfig config) {
         Map<String, com.poc.pdf.model.Rectangle> map = new HashMap<>();
         List<com.poc.pdf.model.Rectangle> srcRectList = new ArrayList<>();
         for (com.poc.pdf.model.Rectangle rectangle : result.getRectList()) {
@@ -178,19 +239,39 @@ public class GridLines extends BaseLine {
         int rd = TableUtil.randomRange(config.getSignatureMax(), config.getSignatureMin());
         if (rd > srcRectList.size()) {
             if (srcRectList.size() == 1) {
-                return map;
+                return;
 
             }
             rd = TableUtil.randomRange(srcRectList.size(), 0);
         }
         if (rd == 0) {
-            return map;
+            return;
         }
 
         Collections.shuffle(srcRectList);
         for (int i = 0; i < rd; i++) {
             com.poc.pdf.model.Rectangle rectangle = srcRectList.get(i);
             map.put(rectangle.getName(), rectangle);
+        }
+        for (com.poc.pdf.model.Rectangle rectangle : result.getRectList()) {
+            if (map.get(rectangle.getName()) != null) {
+                rectangle.setBlank(true);
+            }
+        }
+
+    }
+
+    /**
+     * @param result
+     * @return
+     */
+    private static Map<String, com.poc.pdf.model.Rectangle> getBlank(GridLayoutResult result) {
+        Map<String, com.poc.pdf.model.Rectangle> map = new HashMap<>();
+        List<com.poc.pdf.model.Rectangle> srcRectList = new ArrayList<>();
+        for (com.poc.pdf.model.Rectangle rectangle : result.getRectList()) {
+            if (rectangle.isBlank()) {
+                srcRectList.add(rectangle);
+            }
         }
         return map;
     }

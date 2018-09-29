@@ -14,6 +14,7 @@ import com.poc.pdf.util.FontUtil;
 import com.poc.pdf.util.PDFUtil;
 import com.poc.pdf.util.TableUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.log4j.Logger;
@@ -52,10 +53,15 @@ public class TableLines extends BaseLine {
         List<FileInfo> fileNames = new ArrayList<>(size);
 
         List<FileInfo> signatureList = FileUtil.loadDirImages(config.getSignatureDir());
+        List<String> structureJsonList = getStructureJsonList(config);
 
         for (int index = 0; index < config.getNumberOfCategory(); index++) {
             int begin = index * config.getDistance() + config.getBeginAt();
-            List<TableStructure> resultList = getResult(config);
+            String structureJson = null;
+            if (structureJsonList != null && structureJsonList.size() - 1 >= index) {
+                structureJson = structureJsonList.get(index);
+            }
+            List<TableStructure> resultList = getResult(config, structureJson);
             listInList.add(resultList);
             String beginStr = StringUtils.leftPad("" + begin, 6, "0");
             String path = Const.layoutName + Const.prefix + beginStr + "/";
@@ -76,12 +82,14 @@ public class TableLines extends BaseLine {
 
                 createPdf(fullPath, fileName, config, temp, signatureList);
 
-                TableStructureText structureText = TableUtil.structure2Xml(temp, offsiteStr, config);
+                TableStructureText structureText = TableUtil.structure2Xml(temp, fileName, config);
                 String xmlFullPath = path + fileName + ".xml";
                 String txtFullPath = path + fileName + ".txt";
+                String jsonFullPath = path + fileName + ".json";
 
                 FileUtil.write(structureText.getStructureXml(), xmlFullPath);
                 FileUtil.write(structureText.getText().toString(), txtFullPath);
+                FileUtil.write(structureText.getJson().toString(), jsonFullPath);
             }
         }
 
@@ -105,12 +113,22 @@ public class TableLines extends BaseLine {
     }
 
     public static void main(String args[]) throws IOException {
-        process();
+        try{
+
+            process();
+        }catch (Throwable e){
+            logger.error("Table lines error", e);
+        }
     }
 
-    public static List<TableStructure> getResult(TableLayoutConfig config) {
+    public static List<TableStructure> getResult(TableLayoutConfig config, String structureJson) {
         List<TableStructure> resultList = new ArrayList<>();
-        TableStructure structure = TableUtil.getFulfillStructure(config);
+        TableStructure structure;
+        if (StringUtils.isNotBlank(structureJson)) {
+            structure = TableUtil.Const.gson.fromJson(structureJson, TableStructure.class);
+        } else {
+            structure = TableUtil.getFulfillStructure(config);
+        }
         for (int i = 0; i < config.getEachCategoryTotal(); i++) {
             resultList.add(structure);
         }
@@ -179,6 +197,25 @@ public class TableLines extends BaseLine {
 
         //Close document
         pdf.close();
+    }
+
+    /**
+     * @param config
+     * @return
+     */
+    public static List<String> getStructureJsonList(TableLayoutConfig config) {
+        List<String> jsonList = new ArrayList<>();
+        if (config.isFixedStructureEnable() && CollectionUtils.isNotEmpty(config.getFixedStructureJsonList())) {
+            for (String jsonPath : config.getFixedStructureJsonList()) {
+                try {
+                    String json = FileUtils.readFileToString(new File(jsonPath));
+                    jsonList.add(json);
+                } catch (IOException e) {
+                    logger.error("cannot find " + jsonPath + e);
+                }
+            }
+        }
+        return jsonList;
     }
 
 

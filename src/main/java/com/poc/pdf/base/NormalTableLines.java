@@ -11,6 +11,7 @@ import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
 import com.poc.pdf.util.*;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.log4j.Logger;
@@ -35,6 +36,9 @@ public class NormalTableLines extends BaseLine {
         String layoutName = "./normal-table/";
 
         String prefix = "";
+
+        boolean split = false;
+
     }
 
     public static void process() throws IOException {
@@ -49,11 +53,17 @@ public class NormalTableLines extends BaseLine {
 
         List<FileInfo> signatureList = FileUtil.loadDirImages(config.getSignatureDir());
 
-        MockData mockData = MockDataUtil.parseMockData("mock-data.txt");
+        MockData mockData = MockDataUtil.parseMockData(config.getMockDataPath());
+        List<String> structureJsonList = getStructureJsonList(config);
 
-        for (int index = 0; index < config.getNumberOfCategory(); index++) {
+        int numberOfCategory = Const.split ? config.getNumberOfCategory() * 3 : config.getNumberOfCategory();
+        for (int index = 0; index < numberOfCategory; index++) {
             int begin = index * config.getDistance() + config.getBeginAt();
-            List<TableStructure> resultList = getResult(config, mockData);
+            String structureJson = null;
+            if (structureJsonList != null && structureJsonList.size() - 1 >= index) {
+                structureJson = structureJsonList.get(index);
+            }
+            List<TableStructure> resultList = getResult(config, mockData, structureJson, index);
             listInList.add(resultList);
             String beginStr = StringUtils.leftPad("" + begin, 6, "0");
             String path = Const.layoutName + Const.prefix + beginStr + "/";
@@ -74,12 +84,14 @@ public class NormalTableLines extends BaseLine {
 
                 createPdf(fullPath, fileName, config, temp, signatureList, mockData);
 
-                TableStructureText structureText = TableUtil.structure2Xml(temp, offsiteStr, config);
+                TableStructureText structureText = TableUtil.structure2Xml(temp, fileName, config);
                 String xmlFullPath = path + fileName + ".xml";
                 String txtFullPath = path + fileName + ".txt";
+                String jsonFullPath = path + fileName + ".json";
 
                 FileUtil.write(structureText.getStructureXml(), xmlFullPath);
                 FileUtil.write(structureText.getText().toString(), txtFullPath);
+                FileUtil.write(structureText.getJson().toString(), jsonFullPath);
             }
         }
 
@@ -88,31 +100,78 @@ public class NormalTableLines extends BaseLine {
             String originalPdf = fullPath;
             PDFUtil.splitPdf2Jpg(originalPdf, fileInfo.getParentPath(), 72);
         }
-
-//        for (int index = 0; index < config.getNumberOfCategory(); index++) {
-//            String path = Const.layoutName + "type-" + index + "/";
-//            List<TableStructure> resultList = listInList.get(index);
-//            for (int i = 0; i < resultList.size(); i++) {
-//                String fileName = "type-" + index + "-" + i;
-//                String fullPath = path + fileName + TYPE;
-//
-//                String originalPdf = fullPath;
-//                PDFUtil.splitPdf2Jpg(originalPdf, path, 72);
-//            }
-//        }
     }
 
     public static void main(String args[]) throws IOException {
         process();
     }
 
-    public static List<TableStructure> getResult(TableLayoutConfig config, MockData mockData) {
+    /**
+     * @param config
+     * @param mockData
+     * @param structureJson
+     * @param index
+     * @return
+     */
+    public static List<TableStructure> getResult(TableLayoutConfig config, MockData mockData, String structureJson, int index) {
         List<TableStructure> resultList = new ArrayList<>();
-        TableStructure structure = TableUtil.getNormalStructure(config, mockData);
+        TableStructure structure;
+        if (StringUtils.isNotBlank(structureJson)) {
+            structure = TableUtil.Const.gson.fromJson(structureJson, TableStructure.class);
+            if (Const.split) {
+                int mod = index % 3;
+                if (mod == 1) {
+                    List<Integer> list = structure.getCellHeightList();
+                    int size = list.size() / 2;
+                    structure.setCellHeightList(list.subList(0, size));
+                    int tableHeight = TableUtil.sum(structure.getCellHeightList());
+                    structure.setTableHeight(tableHeight);
+                    TableUtil.generateCell(structure);
+                    TableUtil.generateLine(structure);
+                }
+                if (mod == 2) {
+                    List<Integer> list = structure.getCellHeightList();
+                    int size = list.size() / 3;
+                    structure.setCellHeightList(list.subList(0, size));
+                    int tableHeight = TableUtil.sum(structure.getCellHeightList());
+                    structure.setTableHeight(tableHeight);
+                    TableUtil.generateCell(structure);
+                    TableUtil.generateLine(structure);
+                }
+            }
+        } else {
+            structure = TableUtil.getNormalStructure(config, mockData);
+        }
+
         for (int i = 0; i < config.getEachCategoryTotal(); i++) {
             resultList.add(structure);
         }
         return resultList;
+    }
+
+    /**
+     * @param config
+     * @return
+     */
+    public static List<String> getStructureJsonList(TableLayoutConfig config) {
+        List<String> jsonList = new ArrayList<>();
+        if (config.isFixedStructureEnable() && CollectionUtils.isNotEmpty(config.getFixedStructureJsonList())) {
+            for (String jsonPath : config.getFixedStructureJsonList()) {
+                try {
+                    String json = FileUtils.readFileToString(new File(jsonPath));
+                    if (Const.split) {
+                        for (int i = 0; i < 3; i++) {
+                            jsonList.add(json);
+                        }
+                    } else {
+                        jsonList.add(json);
+                    }
+                } catch (IOException e) {
+                    logger.error("cannot find " + jsonPath + e);
+                }
+            }
+        }
+        return jsonList;
     }
 
     public static void createPdf(String dest, String fileName, TableLayoutConfig config, TableStructure structure, List<FileInfo> signatureList, MockData mockData) throws IOException {
@@ -132,7 +191,11 @@ public class NormalTableLines extends BaseLine {
         }
 
         //fill in text
+        int i = -1;
+        int colSize = structure.getCellWidthList().size();
         for (TableCell rectangle : structure.getCellList()) {
+            i++;
+            boolean isHead = i/colSize < 1;
             int fontSize = structure.getFontSize();
             float leadingSize = structure.getLineHeight();
             List<String> textList = getText(structure, mockData, rectangle, config);
@@ -140,12 +203,15 @@ public class NormalTableLines extends BaseLine {
             int y = rectangle.getReal1(config.getTotalHeight()).getY() - structure.getCellTopPadding();
 
             String fontFamily = structure.getFontFamily();
+            PdfFont pdfFont = FontUtil.createFont(fontFamily);
             canvas.beginText()
-                    .setFontAndSize(FontUtil.createFont(fontFamily), fontSize)
+                    .setFontAndSize(pdfFont, fontSize)
 //                    .setStrokeColor(TableUtil.randomColor())
 //                    .setColor(TableUtil.randomColor(), false)
                     .setLeading(leadingSize)
                     .moveText(x, y);
+            if(isHead){
+            }
             for (String text : textList) {
                 canvas.newlineText();
                 canvas.showText(text);

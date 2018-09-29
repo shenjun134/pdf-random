@@ -5,6 +5,9 @@ import com.itextpdf.kernel.color.DeviceRgb;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 public class TableLayoutConfig extends SignatureConfig {
@@ -109,9 +112,6 @@ public class TableLayoutConfig extends SignatureConfig {
     private boolean blankFillDisable;
 
     private String blankFillString;
-
-
-
 
     public TableLayoutConfig(String propName) {
 //        String propName = "table-layout.properties";
@@ -240,6 +240,31 @@ public class TableLayoutConfig extends SignatureConfig {
             this.blankFillDisable = Boolean.valueOf(blankFillDisable.toString());
         }
         this.blankFillString = blankFillString != null ? blankFillString.toString() : Const.blankStr;
+
+        Object mockDataPath = properties.getProperty("mock.data.path");
+        if (mockDataPath == null) {
+//            throw new RuntimeException("no set mock.data.path property");
+            this.mockDataPath = "mock-data.txt";
+        } else {
+            this.mockDataPath = mockDataPath.toString();
+        }
+
+        Object mockDataHeadShuffle = properties.getProperty("mock.data.head.shuffle");
+        if (mockDataHeadShuffle != null) {
+            this.mockDataHeadShuffle = Boolean.valueOf(mockDataHeadShuffle.toString());
+        }
+
+        Object fixedStructureEnable = properties.getProperty("fixed.structure.enable");
+        if (fixedStructureEnable != null) {
+            this.fixedStructureEnable = Boolean.valueOf(fixedStructureEnable.toString());
+        }
+        Object fixedStructureJsonList = properties.getProperty("fixed.structure.json.list");
+        if (fixedStructureJsonList != null) {
+            this.fixedStructureJsonList = new ArrayList<>(Arrays.asList(fixedStructureJsonList.toString().split(",")));
+            if (this.fixedStructureEnable && this.fixedStructureJsonList.size() > 0) {
+                this.numberOfCategory = this.fixedStructureJsonList.size();
+            }
+        }
 
         this.borderColor = new DeviceRgb(this.borderColorR, this.borderColorG, this.borderColorB);
         this.markBorderColor = new DeviceRgb(this.markBorderColorR, this.markBorderColorG, this.markBorderColorB);
@@ -478,4 +503,5 @@ public class TableLayoutConfig extends SignatureConfig {
     public void setBlankFillString(String blankFillString) {
         this.blankFillString = blankFillString;
     }
+
 }

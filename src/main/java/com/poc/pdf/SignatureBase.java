@@ -11,8 +11,8 @@ import java.io.IOException;
 public class SignatureBase {
 
     public static void main(String[] args) throws IOException {
-        args = new String[]{"table"};
-        args = new String[]{"grid"};
+//        args = new String[]{"table"};
+//        args = new String[]{"grid"};
 //        args = new String[]{"font-test"};
         process(args);
     }

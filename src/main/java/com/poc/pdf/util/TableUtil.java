@@ -1,8 +1,11 @@
 package com.poc.pdf.util;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.font.PdfFont;
 import com.poc.pdf.model.*;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -20,7 +23,7 @@ public class TableUtil {
      */
     private static final Logger logger = Logger.getLogger(TableUtil.class);
 
-    interface Const {
+    public interface Const {
         int baseFont = 16;
         int unitCharLength = 10;
         int unitCharWidth = 10;
@@ -37,6 +40,11 @@ public class TableUtil {
         int markRectOffBottom = 8;
         int markRectOffRight = 2;
         int markRectOffTop = 4;
+
+        int minCol = 6;
+
+        String prefix = "----->";
+        String endfix = "<-----";
 
         String enter = "\n";
 
@@ -69,6 +77,8 @@ public class TableUtil {
         String upperAndLow = uppcaseChar + lowcaseChar;
         String numberAndChar = upperAndLow + numberChar;
         String mixChar = numberAndChar + punctuation;
+
+        Gson gson = new GsonBuilder().create();
 
 
         TextRandom lowcaseRandom = new TextRandom() {
@@ -517,16 +527,25 @@ public class TableUtil {
 
 //        int widthBase = fontSize > config.getCellMinWidth() ? fontSize : config.getCellMinWidth();
         int heightBase = lintHeight > config.getCellMinHeight() ? (int) lintHeight : config.getCellMinHeight();
-        List<MockHead> rdHead = getRandomHead(widthRange, structure, mockData);
+        List<MockHead> rdHead = getRandomHead(widthRange, structure, mockData, config.isMockDataHeadShuffle());
         List<Integer> widthList = new ArrayList<>(rdHead.size());
         float fontBaseWidth = (1.0f * fontSize) / Const.baseFont * Const.unitCharWidth;
         float blankWidth = structure.getCellLeftPadding() + structure.getCellRightPadding() + cellBlankOff();
+        int borderWidth = structure.getBorderWidth();
+        int innerBorderWidth = structure.getInnerBorderWidth();
+        int ii = 0;
         for (MockHead mockHead : rdHead) {
             float cellW = mockHead.getMaxLenght() * fontBaseWidth + blankWidth;
-            widthList.add((int) cellW);
+            if (ii == 0 || ii == (rdHead.size() - 1)) {
+                cellW = cellW + borderWidth + innerBorderWidth;
+            } else {
+                cellW = cellW + 2 * innerBorderWidth;
+            }
+            widthList.add((int) cellW + 1);
+            ii++;
         }
         int rowHeight = (int) (structure.getCellTopPadding() + structure.getCellBottomPadding() + cellBlankHOff() + heightBase);
-        int totalR = (int) (heightRange / rowHeight) - 3;
+        int totalR = (int) (heightRange / rowHeight);
         List<Integer> heightList = new ArrayList<>(totalR);
         for (int i = 0; i < totalR; i++) {
             heightList.add(rowHeight);
@@ -548,18 +567,26 @@ public class TableUtil {
         return 5;
     }
 
-    public static List<MockHead> getRandomHead(int widthRange, TableStructure structure, MockData mockData) {
+    public static List<MockHead> getRandomHead(int widthRange, TableStructure structure, MockData mockData, boolean shuffle) {
         int fontSize = structure.getFontSize();
         float fontBaseWidth = (1.0f * fontSize) / Const.baseFont * Const.unitCharWidth;
-        List<MockHead> copyHead = MockDataUtil.copyShuffle(mockData.getHeadList());
-        int minCol = 5;
+        List<MockHead> copyHead = shuffle ? MockDataUtil.copyShuffle(mockData.getHeadList()) : mockData.getHeadList();
+        int minCol = Const.minCol;
         int maxCol = minCol;
         float blankWidth = structure.getCellLeftPadding() + structure.getCellRightPadding() + cellBlankOff();
 
         float temp = 0;
+        int borderWidth = structure.getBorderWidth();
+        int innerBorderWidth = structure.getInnerBorderWidth();
         for (int i = 0, len = copyHead.size(); i < len; i++) {
             MockHead head = copyHead.get(i);
             float tmpWidth = fontBaseWidth * (head.getMaxLenght()) + blankWidth;
+            if (i == 0) {
+                tmpWidth = tmpWidth + borderWidth + innerBorderWidth;
+            } else {
+                tmpWidth = tmpWidth + 2 * innerBorderWidth;
+            }
+
             temp += tmpWidth;
             maxCol = i + 1;
             if (temp > widthRange) {
@@ -570,7 +597,10 @@ public class TableUtil {
         if (minCol > maxCol) {
             minCol = maxCol;
         }
-        int rd = randomRange(maxCol, minCol);
+        //TODO need be more reasonable
+//        int rd = randomRange(maxCol, minCol);
+        int rd = randomRange(maxCol, maxCol);
+        logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ max Col:" + maxCol + " rd:" + rd);
         return copyHead.subList(0, rd);
     }
 
@@ -1142,6 +1172,34 @@ public class TableUtil {
     }
 
 
+    public static GridStructureText structure2Xml(GridLayoutResult structure, String fileName, SignatureConfig config) {
+        String enter = Const.enter;
+        StringBuilder builder = new StringBuilder();
+        builder.append("<annotation>").append(enter);
+        builder.append(blank(2)).append("<folder>VOC2007</folder>").append(enter);
+        builder.append(blank(2)).append("<filename>").append(fileName).append("</filename>").append(enter);
+        builder.append(blank(2)).append("<owner>").append(enter);
+        builder.append(blank(4)).append("<name>HengTian</name>").append(enter);
+        builder.append(blank(2)).append("</owner>").append(enter);
+        builder.append(blank(2)).append("<size>").append(enter);
+        builder.append(blank(4)).append("<width>").append(config.getTotalWidth()).append("</width>").append(enter);
+        builder.append(blank(4)).append("<height>").append(config.getTotalHeight()).append("</height>").append(enter);
+        builder.append(blank(4)).append("<depth>3</depth>").append(enter);
+        builder.append(blank(2)).append("</size>").append(enter);
+        builder.append(blank(2)).append("<segmented>0</segmented>").append(enter);
+        GridStructureText structureText = new GridStructureText();
+        structureText.getJson().append(Const.gson.toJson(structure));
+
+        for (Rectangle cell : structure.getRectList()) {
+            appendCell(cell, builder);
+            getCellText(cell, structureText);
+        }
+        builder.append("</annotation>").append(enter);
+        structureText.setStructureXml(builder.toString());
+        return structureText;
+    }
+
+
     public static TableStructureText structure2Xml(TableStructure structure, String fileName, SignatureConfig config) {
         String enter = Const.enter;
         StringBuilder builder = new StringBuilder();
@@ -1157,15 +1215,26 @@ public class TableUtil {
         builder.append(blank(4)).append("<depth>3</depth>").append(enter);
         builder.append(blank(2)).append("</size>").append(enter);
         builder.append(blank(2)).append("<segmented>0</segmented>").append(enter);
-        TableStructureText tableStructureText = new TableStructureText();
-        tableStructureText.getText().append("------font-family:").append(structure.getFontFamily()).append(enter);
+        TableStructureText structureText = new TableStructureText();
+        for (TableCell tableCell : structure.getCellList()) {
+            if (tableCell.isMergeBegin()) {
+                tableCell.setCellList(null);
+            }
+        }
+        structureText.getJson().append(Const.gson.toJson(structure));
+
+        structureText.getText().append(Const.prefix + "font-family:").append(structure.getFontFamily()).append(Const.endfix + enter);
+        structureText.getText().append(Const.prefix + "font-size:").append(structure.getFontSize()).append(Const.endfix + enter);
+        structureText.getText().append(Const.prefix + "border-width:").append(structure.getBorderWidth()).append(Const.endfix + enter);
+        structureText.getText().append(Const.prefix + "inner-border-width:").append(structure.getInnerBorderWidth()).append(Const.endfix + enter);
+        structureText.getText().append(Const.prefix + "table-start:").append(structure.getStartPoint()).append(Const.endfix + enter);
         for (TableCell cell : structure.getCellList()) {
             appendCell(cell, builder);
-            getCellText(cell, tableStructureText);
+            getCellText(cell, structureText);
         }
         builder.append("</annotation>").append(enter);
-        tableStructureText.setStructureXml(builder.toString());
-        return tableStructureText;
+        structureText.setStructureXml(builder.toString());
+        return structureText;
     }
 
     public static void appendCell(TableCell cell, StringBuilder builder) {
@@ -1182,17 +1251,47 @@ public class TableUtil {
         builder.append(blank(2)).append("</object>").append(enter);
     }
 
-    public static void getCellText(TableCell cell, TableStructureText tableStructureText) {
+    public static void appendCell(Rectangle cell, StringBuilder builder) {
         String enter = Const.enter;
-        String begin = "-------------start " + cell.getTextP1() + "  end " + cell.getTextP2() + " ---------------";
+        builder.append(blank(2)).append("<object>").append(enter);
+        builder.append(blank(4)).append("<name>cell</name>").append(enter);
+        builder.append(blank(4)).append("<difficult>0</difficult>").append(enter);
+        builder.append(blank(4)).append("<bndbox>").append(enter);
+        builder.append(blank(6)).append("<xmin>" + cell.getPoint1().getX() + "</xmin>").append(enter);
+        builder.append(blank(6)).append("<ymin>" + cell.getPoint1().getY() + "</ymin>").append(enter);
+        builder.append(blank(6)).append("<xmax>" + cell.getPoint2().getX() + "</xmax>").append(enter);
+        builder.append(blank(6)).append("<ymax>" + cell.getPoint2().getY() + "</ymax>").append(enter);
+        builder.append(blank(4)).append("</bndbox>").append(enter);
+        builder.append(blank(2)).append("</object>").append(enter);
+    }
+
+    public static void getCellText(TableCell cell, TableStructureText structureText) {
+        String enter = Const.enter;
+        String begin = Const.prefix + "cell-start " + cell.getTextP1() + "  cell-end " + cell.getTextP2() + Const.endfix;
 
 
-        tableStructureText.append(begin + enter);
+        structureText.append(begin + enter);
         for (String tm : cell.getTextList()) {
-            tableStructureText.append(tm + enter);
+            structureText.append(Const.prefix);
+            structureText.append(tm + Const.endfix + enter);
         }
-        tableStructureText.append(enter);
+        structureText.append(enter);
+    }
 
+    public static void getCellText(Rectangle cell, GridStructureText structureText) {
+        String enter = Const.enter;
+        String begin = Const.prefix + "cell-start " + cell.getPoint1() + "  cell-end " + cell.getPoint2() + Const.endfix;
+
+
+        structureText.append(begin + enter);
+        if (CollectionUtils.isEmpty(cell.getText())) {
+            return;
+        }
+        for (String tm : cell.getText()) {
+            structureText.append(Const.prefix);
+            structureText.append(tm + Const.endfix + enter);
+        }
+        structureText.append(enter);
     }
 
     public static String blank(int size) {

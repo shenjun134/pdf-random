@@ -16,6 +16,8 @@ public class Rectangle {
 
     private List<String> text;
 
+    private boolean isBlank;
+
     public Point getPoint1() {
         return point1;
     }
@@ -87,15 +89,24 @@ public class Rectangle {
         this.name = name;
     }
 
+    public boolean isBlank() {
+        return isBlank;
+    }
+
+    public void setBlank(boolean blank) {
+        isBlank = blank;
+    }
+
     @Override
     public String toString() {
         return "Rectangle{" +
-                "id='" + id + '\'' +
+                "id=" + id +
                 ", name='" + name + '\'' +
                 ", point1=" + point1 +
                 ", point2=" + point2 +
                 ", isSplit=" + isSplit +
                 ", text=" + text +
+                ", isBlank=" + isBlank +
                 '}';
     }
 }
