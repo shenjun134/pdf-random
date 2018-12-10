@@ -1,5 +1,7 @@
 package com.poc.pdf.model;
 
+import java.io.File;
+
 public class FileInfo {
     /**
      * name without type and without parent path
@@ -16,6 +18,13 @@ public class FileInfo {
         this.fileName = fileName;
         this.parentPath = parentPath;
         this.type = type;
+    }
+
+
+    public FileInfo(File file){
+        this.fullpath = file.getAbsolutePath();
+        this.parentPath = file.getParent();
+        this.fileName = file.getName();
     }
 
     public String getFileName() {

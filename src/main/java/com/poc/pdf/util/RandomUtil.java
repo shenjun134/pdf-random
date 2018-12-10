@@ -15,8 +15,22 @@ import java.text.DecimalFormat;
 public class RandomUtil {
 
 
+    public static String uppcaseFirst(String src) {
+        return StringUtils.join(new String[]{src.substring(0, 1).toUpperCase(), src.substring(1).toLowerCase()});
+    }
+
     public static String defRandom() {
         return randomStr(8, 4);
+    }
+
+    public static String randomStrOnly(int max, int min) {
+        int length = (int) (Math.random() * 100d % max);
+        if (length < min && length > 0) {
+            length = min;
+        } else if (length == 0) {
+            length = max;
+        }
+        return RandomStringUtils.random(length, true, false);
     }
 
     public static String randomStr(int max, int min) {
@@ -174,7 +188,6 @@ public class RandomUtil {
     /**
      * length = 10
      *
-     *
      * @return 23/02/2018
      */
     public static String randomDate() {
@@ -246,7 +259,6 @@ public class RandomUtil {
     }
 
     interface Constant {
-
         int numberOnly = 50;
         int stringOnly = 80;
         int mix = 100;
