@@ -164,6 +164,10 @@ public class JanusHendersonSimu extends SimulatorBase {
 
 
     public static void main(String[] args) throws Exception {
+        process();
+    }
+
+    public static void process(){
         Long startAt = System.currentTimeMillis();
         try {
             Properties properties = load();
@@ -297,9 +301,10 @@ public class JanusHendersonSimu extends SimulatorBase {
         FileInfo iconF = new FileInfo(file);
         insertImage(iconF, config.iconStart, canvas, Constant.rectangle.getHeight(), Constant.iconWidth);
 
-        Point end = new Point((int) (config.iconStart.getX() + Constant.iconWidth), (int) (config.iconStart.getY() - Constant.iconHeight));
+        Point start = new Point((int) (config.iconStart.getX() - 1f), (int) (config.iconStart.getY() - Constant.iconHeight));
+        Point end = new Point((int) (config.iconStart.getX() + Constant.iconWidth), (int) (config.iconStart.getY() - 0f));
 
-        addRectangle4Logo(config.iconStart, end, "Logo Area", config);
+        addRectangle4Logo(start, end, "Logo Area", config);
     }
 
     private static void insertNoise(PdfCanvas canvas, Config config) {
@@ -335,8 +340,8 @@ public class JanusHendersonSimu extends SimulatorBase {
         Point signPoint = new Point((int) (Constant.rectangle.getWidth() / 2 + left), (int) (height + 0 + 32));
         insertImage(fileInfo, signPoint, canvas, Constant.rectangle.getHeight(), width);
         //TODO
-        Point start = new Point((int) (signPoint.getX() - 1f), (int) (signPoint.getY() + 0f));
-        Point end = new Point((int) (signPoint.getX() + width + 1), (int) (start.getY() - width));
+        Point start = new Point((int) (signPoint.getX() - 1f), (int) (signPoint.getY()  - width ));
+        Point end = new Point((int) (signPoint.getX() + width + 1), (int) (signPoint.getY() + 0f));
         addRectangle4Sign(start, end, "Signature Area", config);
     }
 

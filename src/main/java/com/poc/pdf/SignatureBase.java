@@ -4,6 +4,7 @@ import com.poc.pdf.base.FontTest;
 import com.poc.pdf.base.GridLines;
 import com.poc.pdf.base.NormalTableLines;
 import com.poc.pdf.base.TableLines;
+import com.poc.pdf.simulate.JanusHendersonSimu;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class SignatureBase {
         }
         if (StringUtils.equalsIgnoreCase("janus-henderson", type.trim())) {
             System.out.println("begin to print janus-henderson.pdf");
-            new FontTest().process();
+            new JanusHendersonSimu().process();
             return;
         }
     }

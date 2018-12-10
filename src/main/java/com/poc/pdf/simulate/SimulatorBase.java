@@ -1,12 +1,15 @@
 package com.poc.pdf.simulate;
 
+import com.itextpdf.io.font.FontConstants;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.color.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
+import com.poc.pdf.util.FontUtil;
 import com.poc.pdf.util.RandomUtil;
 import com.poc.pdf.util.TableUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -101,6 +104,16 @@ public class SimulatorBase {
             logger.warn("No rectangle to draw");
             return;
         }
+        String fontFamily = FontConstants.HELVETICA;
+        PdfFont baseFont = null;
+        try {
+            baseFont = FontUtil.createFont(fontFamily);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //TODO
+        int fontSize = 6;
+        float leading = 6f;
         for (Rectangle rectangle : config.rectangleList) {
             System.out.println("Rect:" + rectangle.getName());
             RectangleLine rectangleLine = new RectangleLine(rectangle);
@@ -112,8 +125,27 @@ public class SimulatorBase {
                 }
                 drawLine(canvas, line, config.layoutHeight);
                 canvas.stroke();
+
+                canvas.beginText()
+                        .setFontAndSize(baseFont, fontSize)
+                        .setColor(config.markColor, true)
+                        .setLeading(leading)
+                        .moveText(rectangle.getPoint1().getX()+2, config.layoutHeight - rectangle.getPoint1().getY());
+                String text = rectangle2Str(rectangle);
+                canvas.newlineShowText(text);
+                canvas.endText();
+
             }
         }
+    }
+
+    private static String rectangle2Str(Rectangle rectangle){
+        StringBuilder builder = new StringBuilder();
+        builder.append("x1:").append(rectangle.getPoint1().getX()).append(",");
+        builder.append("y1:").append(rectangle.getPoint1().getY()).append(",");
+        builder.append("x2:").append(rectangle.getPoint2().getX()).append(",");
+        builder.append("y2:").append(rectangle.getPoint2().getY()).append(",");
+        return builder.toString();
     }
 
     /**
@@ -169,7 +201,7 @@ public class SimulatorBase {
         builder.append(blank(2)).append("</owner>").append(enter);
         builder.append(blank(2)).append("<size>").append(enter);
         builder.append(blank(4)).append("<width>").append(config.layoutWidth).append("</width>").append(enter);
-        builder.append(blank(4)).append("<height>").append(config.layoutWidth).append("</height>").append(enter);
+        builder.append(blank(4)).append("<height>").append(config.layoutHeight).append("</height>").append(enter);
         builder.append(blank(4)).append("<depth>3</depth>").append(enter);
         builder.append(blank(2)).append("</size>").append(enter);
         builder.append(blank(2)).append("<segmented>0</segmented>").append(enter);
@@ -181,8 +213,8 @@ public class SimulatorBase {
                 builder.append(blank(4)).append("<bndbox>").append(enter);
                 builder.append(blank(4)).append("<xmin>").append(rectangle.getPoint1().getX()).append("</xmin>").append(enter);
                 builder.append(blank(4)).append("<ymin>").append(rectangle.getPoint1().getY()).append("</ymin>").append(enter);
-                builder.append(blank(4)).append("<xmax>").append(rectangle.getPoint1().getX()).append("</xmax>").append(enter);
-                builder.append(blank(4)).append("<ymax>").append(rectangle.getPoint1().getX()).append("</ymax>").append(enter);
+                builder.append(blank(4)).append("<xmax>").append(rectangle.getPoint2().getX()).append("</xmax>").append(enter);
+                builder.append(blank(4)).append("<ymax>").append(rectangle.getPoint2().getY()).append("</ymax>").append(enter);
                 builder.append(blank(4)).append("</bndbox>").append(enter);
                 builder.append(blank(2)).append("</object>").append(enter);
             } else {
