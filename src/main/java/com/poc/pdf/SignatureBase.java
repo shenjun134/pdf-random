@@ -42,5 +42,10 @@ public class SignatureBase {
             new FontTest().process();
             return;
         }
+        if (StringUtils.equalsIgnoreCase("janus-henderson", type.trim())) {
+            System.out.println("begin to print janus-henderson.pdf");
+            new FontTest().process();
+            return;
+        }
     }
 }
