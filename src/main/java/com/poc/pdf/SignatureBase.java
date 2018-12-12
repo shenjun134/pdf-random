@@ -5,6 +5,8 @@ import com.poc.pdf.base.GridLines;
 import com.poc.pdf.base.NormalTableLines;
 import com.poc.pdf.base.TableLines;
 import com.poc.pdf.simulate.JanusHendersonSimu;
+import com.poc.pdf.simulate.LazardTranSimu;
+import com.poc.pdf.simulate.PimcoSimu;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -46,6 +48,16 @@ public class SignatureBase {
         if (StringUtils.equalsIgnoreCase("janus-henderson", type.trim())) {
             System.out.println("begin to print janus-henderson.pdf");
             new JanusHendersonSimu().process();
+            return;
+        }
+        if (StringUtils.equalsIgnoreCase("pimco", type.trim())) {
+            System.out.println("begin to print pimco.pdf");
+            new PimcoSimu().process();
+            return;
+        }
+        if (StringUtils.equalsIgnoreCase("lazard-tan", type.trim())) {
+            System.out.println("begin to print lazard-tan.pdf");
+            new LazardTranSimu().process();
             return;
         }
     }

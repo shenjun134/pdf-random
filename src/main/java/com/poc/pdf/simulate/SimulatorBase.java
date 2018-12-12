@@ -13,18 +13,22 @@ import com.poc.pdf.util.FontUtil;
 import com.poc.pdf.util.RandomUtil;
 import com.poc.pdf.util.TableUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
 
 public class SimulatorBase {
 
     private static final Logger logger = Logger.getLogger(SimulatorBase.class);
+
+    public static final NumberFormat numFmt = new DecimalFormat("###,###,###,###,###.##");
 
     public static class BaseConfig {
         String dest;
@@ -139,13 +143,36 @@ public class SimulatorBase {
         }
     }
 
-    private static String rectangle2Str(Rectangle rectangle){
+    protected static Date randomDate() {
+        Calendar calendar = Calendar.getInstance();
+        int days = RandomUtil.randomInt(365, 0) * (RandomUtil.randomBool() ? -1 : 1);
+        calendar.add(Calendar.DAY_OF_YEAR, days);
+        return calendar.getTime();
+    }
+
+    protected static void setOffsize(Point point, int topOffsize, int leftOffsize) {
+        point.setY(point.getY() + topOffsize);
+        point.setX(point.getX() + leftOffsize);
+    }
+
+    protected static String rectangle2Str(Rectangle rectangle){
         StringBuilder builder = new StringBuilder();
         builder.append("x1:").append(rectangle.getPoint1().getX()).append(",");
         builder.append("y1:").append(rectangle.getPoint1().getY()).append(",");
         builder.append("x2:").append(rectangle.getPoint2().getX()).append(",");
         builder.append("y2:").append(rectangle.getPoint2().getY()).append(",");
         return builder.toString();
+    }
+
+    protected static String randomNumber(int intLen, int deciLen, boolean withDollar) {
+        String intVal = intLen == 0 ? "0" : RandomStringUtils.random(intLen, false, true);
+        int intNum = NumberUtils.toInt(intVal, 0);
+        String deciVal = "";
+        if (deciLen > 0) {
+            deciVal = "." + RandomStringUtils.random(deciLen, false, true);
+        }
+        String prefix = withDollar ? "$" : "";
+        return StringUtils.join(new String[]{prefix, numFmt.format(intNum), deciVal});
     }
 
     /**

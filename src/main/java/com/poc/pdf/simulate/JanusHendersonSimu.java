@@ -51,7 +51,6 @@ public class JanusHendersonSimu extends SimulatorBase {
 
         DateFormat fmtFull = new SimpleDateFormat("dd MMMM yyyy", Locale.US);
         DateFormat fmtshort = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
-        NumberFormat numFmt = new DecimalFormat("###,###,###,###,###.##");
         int detailMaxRow = 5;
         int noiseCountMax = 5;
         int noiseBorderMax = 2;
@@ -59,7 +58,7 @@ public class JanusHendersonSimu extends SimulatorBase {
 
     interface OffsizeRange {
         int topMax = 20;
-        int topMin = 20;
+        int topMin = 0;
         int left = 20;
     }
 
@@ -138,29 +137,9 @@ public class JanusHendersonSimu extends SimulatorBase {
         return config;
     }
 
-    private static Date randomDate() {
-        Calendar calendar = Calendar.getInstance();
-        int days = RandomUtil.randomInt(365, 0) * (RandomUtil.randomBool() ? -1 : 1);
-        calendar.add(Calendar.DAY_OF_YEAR, days);
-        return calendar.getTime();
-    }
-
-    private static void setOffsize(Point point, int topOffsize, int leftOffsize) {
-        point.setY(point.getY() + topOffsize);
-        point.setX(point.getX() + leftOffsize);
-    }
 
 
-    private static String randomNumber(int intLen, int deciLen, boolean withDoller) {
-        String intVal = intLen == 0 ? "0" : RandomStringUtils.random(intLen, false, true);
-        int intNum = NumberUtils.toInt(intVal, 0);
-        String deciVal = "";
-        if (deciLen > 0) {
-            deciVal = "." + RandomStringUtils.random(deciLen, false, true);
-        }
-        String prefix = withDoller ? "$" : "";
-        return StringUtils.join(new String[]{prefix, Constant.numFmt.format(intNum), deciVal});
-    }
+
 
 
     public static void main(String[] args) throws Exception {

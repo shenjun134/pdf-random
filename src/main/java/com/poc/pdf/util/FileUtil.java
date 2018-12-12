@@ -139,7 +139,7 @@ public class FileUtil {
 
 
     public static void main(String[] args) {
-        String dir = "C:/Users/e521907/home/data/signature-temp/val";
+        String dir = "";
         System.out.println(loadDirImages(dir));
     }
 }
