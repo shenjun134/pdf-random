@@ -443,8 +443,8 @@ public class LazardTranSimu extends SimulatorBase {
             canvas.endText();
             currentTopY = currentTopY - fontSize - 1;
         }
-        Point start = new Point((int) (startP.getX() + 1f), (int) (startP.getY() - 3f));
-        Point end = new Point((int) (startP.getX() - maxRowWidth - 1f), (int) (startP.getY() + arr.length * fontSize - 1));
+        Point start = new Point((int) (startP.getX() - maxRowWidth - 1f), (int) (startP.getY() - 3f));
+        Point end = new Point((int) (startP.getX() + 1f), (int) (startP.getY() + arr.length * fontSize - 1f));
         addRectangle4Table(start, end, text, config);
     }
 
