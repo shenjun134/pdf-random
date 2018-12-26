@@ -126,6 +126,7 @@ public class LazardTranSimu extends SimulatorBase {
                 config.dest = prefix + "-" + index + ".pdf";
                 config.layoutXmlFile = prefix + "-layout-" + index + ".xml";
                 config.tableXmlFile = prefix + "-table-" + index + ".xml";
+                config.tableOutlineXmlFile = prefix + "-table-outline-" + index + ".xml";
                 config.signXmlFile = prefix + "-signature-" + index + ".xml";
                 config.logoXmlFile = prefix + "-logo-" + index + ".xml";
                 config.textFile = prefix + "-text-" + index + ".txt";
@@ -173,10 +174,12 @@ public class LazardTranSimu extends SimulatorBase {
 
         String signXml = generateXml(config, "SIGNATURE:", config.signXmlFile);
         String tableXml = generateXml(config, "TABLE:", config.tableXmlFile);
+        String tableOutlineXml = generateXml(config, "TABLE-OUTLINE:", config.tableOutlineXmlFile);
         String layoutXml = generateXml(config, "LAYOUT:", config.layoutXmlFile);
         String logoXml = generateXml(config, "LOGO:", config.logoXmlFile);
         FileUtil.write(signXml, Constant.output + config.signXmlFile);
         FileUtil.write(tableXml, Constant.output + config.tableXmlFile);
+        FileUtil.write(tableOutlineXml, Constant.output + config.tableOutlineXmlFile);
         FileUtil.write(layoutXml, Constant.output + config.layoutXmlFile);
         FileUtil.write(logoXml, Constant.output + config.logoXmlFile);
     }
@@ -309,6 +312,8 @@ public class LazardTranSimu extends SimulatorBase {
         LinkedHashMap<String, Float> leftMap = new LinkedHashMap<>();
         leftMap.put("TRADE DATE", xBegin);
         leftMap.put("TRANSACTION DESCRIPTION", xBegin + 90f);
+        Point tableOutlineStart = new Point((int)(xBegin - 5), (int)(yBegin - 5));
+        Point tableOutlineEnd = new Point(config.line2End.getX(), (int)(yBegin - 2));
 
         LinkedHashMap<String, Float> rightMap = new LinkedHashMap<>();
         rightMap.put("PRICE PER UNIT (A$)", xBegin + 330f);
@@ -367,6 +372,8 @@ public class LazardTranSimu extends SimulatorBase {
         String asAt = "AS AT " + DateFormatUtils.format(config.statementDate, "MM/dd/yyyy");
         Point aaPoint = new Point((int) (xBegin + 82f), (int) yBegin);
         printInfo4Table(canvas, config, asAt, aaPoint, 9, baseFontBold);
+        tableOutlineEnd.setY((int)(yBegin + 10));
+        addRectangle4TableOutline(tableOutlineStart, tableOutlineEnd, "Table-Outline", config);
     }
 
     private static void drawSignature(PdfCanvas canvas, Config config) throws MalformedURLException {
@@ -420,7 +427,7 @@ public class LazardTranSimu extends SimulatorBase {
         canvas.endText();
         Point start = new Point((int) (startP.getX() - 1f), (int) (startP.getY() - 3f));
         Point end = new Point((int) (startP.getX() + maxRowWidth + 1f), (int) (startP.getY() + fontSize - 1f));
-        addRectangle4Table(start, end, text, config);
+        addRectangle4TableCell(start, end, text, config);
     }
 
     private static void printInfo4TableRight(PdfCanvas canvas, Config config, String text, Point startP, int fontSize, PdfFont baseFont) throws IOException {
@@ -445,7 +452,7 @@ public class LazardTranSimu extends SimulatorBase {
         }
         Point start = new Point((int) (startP.getX() - maxRowWidth - 1f), (int) (startP.getY() - 3f));
         Point end = new Point((int) (startP.getX() + 1f), (int) (startP.getY() + arr.length * fontSize - 1f));
-        addRectangle4Table(start, end, text, config);
+        addRectangle4TableCell(start, end, text, config);
     }
 
     private static void printInfoWithoutRect(PdfCanvas canvas, Config config, String text, Point startP, int fontSize, PdfFont baseFont) throws IOException {

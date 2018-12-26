@@ -34,6 +34,7 @@ public class SimulatorBase {
         String dest;
         String layoutXmlFile;
         String tableXmlFile;
+        String tableOutlineXmlFile;
         String signXmlFile;
         String logoXmlFile;
         String textFile;
@@ -197,9 +198,14 @@ public class SimulatorBase {
      * @param name
      * @param config
      */
-    protected static void addRectangle4Table(Point start, Point end, String name, BaseConfig config) {
+    protected static void addRectangle4TableCell(Point start, Point end, String name, BaseConfig config) {
         Rectangle rectangle = addRectangle(start, end, name, config);
         rectangle.setName("TABLE:" + rectangle.getName());
+    }
+
+    protected static void addRectangle4TableOutline(Point start, Point end, String name, BaseConfig config) {
+        Rectangle rectangle = addRectangle(start, end, name, config);
+        rectangle.setName("TABLE-OUTLINE:" + rectangle.getName());
     }
 
     protected static void addRectangle4Sign(Point start, Point end, String name, BaseConfig config) {

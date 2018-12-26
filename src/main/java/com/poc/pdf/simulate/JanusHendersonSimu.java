@@ -160,6 +160,7 @@ public class JanusHendersonSimu extends SimulatorBase {
                 config.dest = prefix + "-" + index + ".pdf";
                 config.layoutXmlFile = prefix + "-layout-" + index + ".xml";
                 config.tableXmlFile = prefix + "-table-" + index + ".xml";
+                config.tableOutlineXmlFile = prefix + "-table-outline-" + index + ".xml";
                 config.signXmlFile = prefix + "-signature-" + index + ".xml";
                 config.logoXmlFile = prefix + "-logo-" + index + ".xml";
                 config.textFile = prefix + "-text-" + index + ".txt";
@@ -212,10 +213,12 @@ public class JanusHendersonSimu extends SimulatorBase {
 
         String signXml = generateXml(config, "SIGNATURE:", config.signXmlFile);
         String tableXml = generateXml(config, "TABLE:", config.tableXmlFile);
+        String tableOutlineXml = generateXml(config, "TABLE-OUTLINE:", config.tableOutlineXmlFile);
         String layoutXml = generateXml(config, "LAYOUT:", config.layoutXmlFile);
         String logoXml = generateXml(config, "LOGO:", config.logoXmlFile);
         FileUtil.write(signXml, Constant.output + config.signXmlFile);
         FileUtil.write(tableXml, Constant.output + config.tableXmlFile);
+        FileUtil.write(tableOutlineXml, Constant.output + config.tableOutlineXmlFile);
         FileUtil.write(layoutXml, Constant.output + config.layoutXmlFile);
         FileUtil.write(logoXml, Constant.output + config.logoXmlFile);
     }
@@ -729,6 +732,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         float summaryHeaderHeight = 17f;
         canvas.setLineWidth(summaryHeaderHeight).setStrokeColor(Constant.fontColor);
         float summaryLineTop = Constant.rectangle.getHeight() - currentY;
+        Point summaryTableFirstP = new Point((int) xBegin - 2, (int) summaryLineTop - 10);
         Point summaryHeaderStart = new Point((int) xBegin, (int) summaryLineTop);
         Point summaryHeaderEnd = new Point((int) xBegin + lineWidth, (int) summaryLineTop);
         Line summaryLine = new Line(summaryHeaderStart, summaryHeaderEnd);
@@ -759,7 +763,8 @@ public class JanusHendersonSimu extends SimulatorBase {
         float headerW = baseFontBold.getWidth("Date", fontSizeHeader);
         Point startSDate = new Point((int) (config.headerStart.getX() + 0), (int) (Constant.rectangle.getHeight() - summaryHeaderY - 4));
         Point endSDate = new Point((int) (config.headerStart.getX() + headerW + 3), (int) (Constant.rectangle.getHeight() - summaryHeaderY + 9));
-        addRectangle4Table(startSDate, endSDate, "SH=Date", config);
+        addRectangle4TableCell(startSDate, endSDate, "SH=Date", config);
+
 
         for (Map.Entry<String, Float> entry : summaryHeaderXEnd.entrySet()) {
             String header = entry.getKey();
@@ -776,7 +781,7 @@ public class JanusHendersonSimu extends SimulatorBase {
             canvas.endText();
             Point start = new Point((int) (xEnd + 0), (int) (Constant.rectangle.getHeight() - summaryHeaderY - 4));
             Point end = new Point((int) (xEnd + headerW + 2), (int) (Constant.rectangle.getHeight() - summaryHeaderY + 9));
-            addRectangle4Table(start, end, "SH=" + header, config);
+            addRectangle4TableCell(start, end, "SH=" + header, config);
         }
 
         /**
@@ -784,6 +789,7 @@ public class JanusHendersonSimu extends SimulatorBase {
          */
         float rowHeight = 12f;
         currentY = currentY - 12f;
+        Point summaryTableLastP = null;
         for (int i = 0; i < table4Summary.size(); i++) {
 
             List<String> row = table4Summary.get(i);
@@ -800,7 +806,7 @@ public class JanusHendersonSimu extends SimulatorBase {
                     headerW = baseFont.getWidth(cvalue, fontSizeBody);
                     Point start = new Point((int) (xBegin + 0), (int) (Constant.rectangle.getHeight() - currentY - 4));
                     Point end = new Point((int) (xBegin + headerW + 3), (int) (Constant.rectangle.getHeight() - currentY + 9));
-                    addRectangle4Table(start, end, "SB=row:" + i + ",col:" + col, config);
+                    addRectangle4TableCell(start, end, "SB=row:" + i + ",col:" + col, config);
                 } else {
                     Map.Entry<String, Float> entry = (Map.Entry<String, Float>) getEntry(summaryHeaderXEnd, col - 1);
                     Float xEnd = entry.getValue();
@@ -815,12 +821,17 @@ public class JanusHendersonSimu extends SimulatorBase {
                     canvas.endText();
                     Point start = new Point((int) (xEnd + 0), (int) (Constant.rectangle.getHeight() - currentY - 4));
                     Point end = new Point((int) (xEnd + headerW + 3), (int) (Constant.rectangle.getHeight() - currentY + 9));
-                    addRectangle4Table(start, end, "SB=row:" + i + ",col:" + col, config);
+                    addRectangle4TableCell(start, end, "SB=row:" + i + ",col:" + col, config);
+                    if(i == table4Summary.size() - 1){
+                        summaryTableLastP = new Point((int) (xEnd + headerW + 3 + 3), (int) (Constant.rectangle.getHeight() - currentY + 9 + 2));
+                    }
                 }
                 col++;
             }
             currentY = currentY - rowHeight;
         }
+        //ADD summary table outline
+        addRectangle4TableOutline(summaryTableFirstP, summaryTableLastP, "Summary Table-Outline", config);
         /**
          * end of summary table body
          */
@@ -828,6 +839,7 @@ public class JanusHendersonSimu extends SimulatorBase {
 
         canvas.setLineWidth(bottomHeight).setStrokeColor(Constant.fontColor);
         float summaryBottomLineTop = Constant.rectangle.getHeight() - currentY;
+
         Point summaryBottomStart = new Point((int) xBegin, (int) summaryBottomLineTop);
         Point summaryBottomEnd = new Point((int) xBegin + lineWidth, (int) summaryBottomLineTop);
         Line summaryBottomLine = new Line(summaryBottomStart, summaryBottomEnd);
@@ -846,6 +858,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         canvas.endText();
 
         float detailW = baseFontBold.getWidth(detailTitle, fontSizeHeader);
+
         Point startDTDate = new Point((int) (config.headerStart.getX() + 0), (int) (Constant.rectangle.getHeight() - currentY - 3));
         Point endDTDate = new Point((int) (config.headerStart.getX() + detailW + 3), (int) (Constant.rectangle.getHeight() - currentY + 8));
         addRectangle4Layout(startDTDate, endDTDate, summaryTitle, config);
@@ -857,6 +870,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         float detailHeaderHeight = 26f;
         canvas.setLineWidth(detailHeaderHeight).setStrokeColor(Constant.fontColor);
         float detailLineTop = Constant.rectangle.getHeight() - currentY;
+        Point detailTableFirstP = new Point((int) xBegin - 2, (int) detailLineTop - 14);
         Point detailHeaderStart = new Point((int) xBegin, (int) detailLineTop);
         Point detailHeaderEnd = new Point((int) xBegin + lineWidth, (int) detailLineTop);
         Line detailLine = new Line(detailHeaderStart, detailHeaderEnd);
@@ -894,7 +908,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         headerW = baseFontBold.getWidth("Paid", fontSizeHeader);
         Point startDDate = new Point((int) (xBegin + 0), (int) (Constant.rectangle.getHeight() - detailHeaderY2 - 13));
         Point endDDate = new Point((int) (xBegin + headerW + 3), (int) (Constant.rectangle.getHeight() - detailHeaderY2 + 9));
-        addRectangle4Table(startDDate, endDDate, "DH=Paid", config);
+        addRectangle4TableCell(startDDate, endDDate, "DH=Paid", config);
 
         for (Map.Entry<String, Float> entry : detailHeaderXEnd.entrySet()) {
             String[] headerAr = entry.getKey().split("\n");
@@ -922,9 +936,10 @@ public class JanusHendersonSimu extends SimulatorBase {
             canvas.endText();
             Point start = new Point((int) (xEnd1 > xEnd2 ? xEnd2 : xEnd1 + 0), (int) (Constant.rectangle.getHeight() - detailHeaderY2 - 13));
             Point end = new Point((int) (xEnd.floatValue() + 1), (int) (Constant.rectangle.getHeight() - detailHeaderY2 + 9));
-            addRectangle4Table(start, end, "DH=" + entry.getKey(), config);
+            addRectangle4TableCell(start, end, "DH=" + entry.getKey(), config);
         }
         currentY = currentY - 18;
+        Point detailTableLastP = null;
         for (int i = 0; i < table4Detail.size(); i++) {
 
             List<String> row = table4Detail.get(i);
@@ -941,7 +956,7 @@ public class JanusHendersonSimu extends SimulatorBase {
                     headerW = baseFont.getWidth(cvalue, fontSizeBody);
                     Point start = new Point((int) (xBegin + 0), (int) (Constant.rectangle.getHeight() - currentY - 4));
                     Point end = new Point((int) (xBegin + headerW + 3), (int) (Constant.rectangle.getHeight() - currentY + 9));
-                    addRectangle4Table(start, end, "DB=row:" + i + ",col:" + col, config);
+                    addRectangle4TableCell(start, end, "DB=row:" + i + ",col:" + col, config);
                 } else {
                     Map.Entry<String, Float> entry = (Map.Entry<String, Float>) getEntry(detailHeaderXEnd, col - 1);
                     Float xEnd = entry.getValue();
@@ -956,12 +971,17 @@ public class JanusHendersonSimu extends SimulatorBase {
                     canvas.endText();
                     Point start = new Point((int) (xEnd + 0), (int) (Constant.rectangle.getHeight() - currentY - 4));
                     Point end = new Point((int) (xEnd + headerW + 3), (int) (Constant.rectangle.getHeight() - currentY + 9));
-                    addRectangle4Table(start, end, "DB=row:" + i + ",col:" + col, config);
+                    addRectangle4TableCell(start, end, "DB=row:" + i + ",col:" + col, config);
+                    if(i == table4Detail.size() - 1){
+                        detailTableLastP = new Point((int) (xEnd + headerW + 3 + 3), (int) (Constant.rectangle.getHeight() - currentY + 9 + 2));
+                    }
                 }
                 col++;
             }
             currentY = currentY - rowHeight;
         }
+        //ADD summary table outline
+        addRectangle4TableOutline(detailTableFirstP, detailTableLastP, "Detail Table-Outline", config);
 
         currentY = currentY - 4;
         canvas.setLineWidth(bottomHeight).setStrokeColor(Constant.fontColor);
