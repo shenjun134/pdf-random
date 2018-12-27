@@ -193,7 +193,7 @@ public class PIMCOSimu extends SimulatorBase {
 
 //        BufferedImage image = new BufferedImage((int)pageSize.getWidth(), (int)pageSize.getHeight(), BufferedImage.TYPE_INT_RGB);
 //        renderer.renderPageToGraphics(0, (Graphics2D)image.getGraphics());
-        BufferedImage image = renderer.renderImage(0, 3);
+        BufferedImage image = renderer.renderImage(0, ZOOM_SCALE);
         writeImage(image, new File(imageFileName));
 
         String output = toXml(table);
