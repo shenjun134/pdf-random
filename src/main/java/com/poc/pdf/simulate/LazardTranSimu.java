@@ -170,7 +170,7 @@ public class LazardTranSimu extends SimulatorBase {
 
         String fullPath = Constant.output + config.dest;
         String originalPdf = fullPath;
-        PDFUtil.splitPdf2Jpg(originalPdf, Constant.output, 72);
+        splitPdf2Jpg(originalPdf, Constant.output, config);
 
         String signXml = generateXml(config, "SIGNATURE:", config.signXmlFile);
         String tableXml = generateXml(config, "TABLE:", config.tableXmlFile);
@@ -312,8 +312,8 @@ public class LazardTranSimu extends SimulatorBase {
         LinkedHashMap<String, Float> leftMap = new LinkedHashMap<>();
         leftMap.put("TRADE DATE", xBegin);
         leftMap.put("TRANSACTION DESCRIPTION", xBegin + 90f);
-        Point tableOutlineStart = new Point((int)(xBegin - 5), (int)(yBegin - 5));
-        Point tableOutlineEnd = new Point(config.line2End.getX(), (int)(yBegin - 2));
+        Point tableOutlineStart = new Point((int) (xBegin - 5), (int) (yBegin - 5));
+        Point tableOutlineEnd = new Point(config.line2End.getX(), (int) (yBegin - 2));
 
         LinkedHashMap<String, Float> rightMap = new LinkedHashMap<>();
         rightMap.put("PRICE PER UNIT (A$)", xBegin + 330f);
@@ -372,7 +372,7 @@ public class LazardTranSimu extends SimulatorBase {
         String asAt = "AS AT " + DateFormatUtils.format(config.statementDate, "MM/dd/yyyy");
         Point aaPoint = new Point((int) (xBegin + 82f), (int) yBegin);
         printInfo4Table(canvas, config, asAt, aaPoint, 9, baseFontBold);
-        tableOutlineEnd.setY((int)(yBegin + 10));
+        tableOutlineEnd.setY((int) (yBegin + 10));
         addRectangle4TableOutline(tableOutlineStart, tableOutlineEnd, "Table-Outline", config);
     }
 

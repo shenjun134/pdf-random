@@ -48,6 +48,10 @@ public class Base {
         System.out.println("VO Util.defOffsiteMinY:" + VOUtil.getDefOffsiteMinY());
         System.out.println("VO Util.defOffsiteMaxX:" + VOUtil.getDefOffsiteMaxX());
         System.out.println("VO Util.defOffsiteMaxY:" + VOUtil.getDefOffsiteMaxY());
+        for(int i = 0; i < 100; i++){
+            double rd = Math.random();
+            System.out.println("" + rd + " "+ Math.round(rd));
+        }
 
         process(count, beginAt);
     }

@@ -138,15 +138,11 @@ public class JanusHendersonSimu extends SimulatorBase {
     }
 
 
-
-
-
-
     public static void main(String[] args) throws Exception {
         process();
     }
 
-    public static void process(){
+    public static void process() {
         Long startAt = System.currentTimeMillis();
         try {
             Properties properties = load();
@@ -209,7 +205,8 @@ public class JanusHendersonSimu extends SimulatorBase {
 
         String fullPath = Constant.output + config.dest;
         String originalPdf = fullPath;
-        PDFUtil.splitPdf2Jpg(originalPdf, Constant.output, 72);
+//        PDFUtil.splitPdf2Jpg(originalPdf, Constant.output, ORIGINAL_SCALE);
+        splitPdf2Jpg(originalPdf, Constant.output, config);
 
         String signXml = generateXml(config, "SIGNATURE:", config.signXmlFile);
         String tableXml = generateXml(config, "TABLE:", config.tableXmlFile);
@@ -267,7 +264,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         param1 = RandomUtil.uppcaseFirst(param1);
         String param2 = RandomStringUtils.random(5, true, false);
         param2 = RandomUtil.uppcaseFirst(param2);
-        return StringUtils.join(new String[]{fund, param1, param2, "Fund"}, " ");
+        return StringUtils.join(new String[]{fund, param1, param2, "Fund" }, " ");
     }
 
     private static void drawBaseLine(PdfCanvas canvas, Config config) {
@@ -322,7 +319,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         Point signPoint = new Point((int) (Constant.rectangle.getWidth() / 2 + left), (int) (height + 0 + 32));
         insertImage(fileInfo, signPoint, canvas, Constant.rectangle.getHeight(), width);
         //TODO
-        Point start = new Point((int) (signPoint.getX() - 1f), (int) (signPoint.getY()  - width ));
+        Point start = new Point((int) (signPoint.getX() - 1f), (int) (signPoint.getY() - width));
         Point end = new Point((int) (signPoint.getX() + width + 1), (int) (signPoint.getY() + 0f));
         addRectangle4Sign(start, end, "Signature Area", config);
     }
@@ -526,10 +523,10 @@ public class JanusHendersonSimu extends SimulatorBase {
 
         LinkedHashMap<String, String[]> tagValue = new LinkedHashMap<>();
         tagValue.put("Enquiries: 1300 019 633 or +61 3 9445 5067", null);
-        tagValue.put("Mail:", new String[]{"GPO Box 804", "Melbourne VIC 3001"});
-        tagValue.put("Fax:", new String[]{"1800 238 910"});
-        tagValue.put("Web:", new String[]{"www.janushenderson.com/australia"});
-        tagValue.put("Email:", new String[]{"clientservices.aus@janushenderson.com"});
+        tagValue.put("Mail:", new String[]{"GPO Box 804", "Melbourne VIC 3001" });
+        tagValue.put("Fax:", new String[]{"1800 238 910" });
+        tagValue.put("Web:", new String[]{"www.janushenderson.com/australia" });
+        tagValue.put("Email:", new String[]{"clientservices.aus@janushenderson.com" });
 
         List<String> endList = new ArrayList<>();
         endList.add("Janus Henderson Investors (Australia)");
@@ -595,7 +592,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         int topX = config.top2Start.getX();
         float topY = Constant.rectangle.getHeight() - config.top2Start.getY();
         LinkedHashMap<String, String[]> tagValue = new LinkedHashMap<>();
-        tagValue.put("Page", new String[]{"1 of 1"});
+        tagValue.put("Page", new String[]{"1 of 1" });
         tagValue.put("Date", new String[]{Constant.fmtFull.format(config.tradeDate)});
         String fundNumber = config.accountName;
         List<String> fundList = new ArrayList<>();
@@ -620,8 +617,8 @@ public class JanusHendersonSimu extends SimulatorBase {
 //        tagValue.put("Investor name", new String[]{"State Street Australia Ltd (Acf Ibfs Re", "Ams Balanced Fund)"});
         tagValue.put("Investor name", fundList.toArray(new String[]{}));
         tagValue.put("Investor number", new String[]{config.accountNumber});
-        tagValue.put("TFN/ABN status", new String[]{"Supplied"});
-        tagValue.put("Financial adviser", new String[]{"FMD", "C/- Janus Henderson", " VIC"});
+        tagValue.put("TFN/ABN status", new String[]{"Supplied" });
+        tagValue.put("Financial adviser", new String[]{"FMD", "C/- Janus Henderson", " VIC" });
         float tagBottom = 5f;
         float currentY = topY;
         float tagHeight = 12f;
@@ -822,7 +819,7 @@ public class JanusHendersonSimu extends SimulatorBase {
                     Point start = new Point((int) (xEnd + 0), (int) (Constant.rectangle.getHeight() - currentY - 4));
                     Point end = new Point((int) (xEnd + headerW + 3), (int) (Constant.rectangle.getHeight() - currentY + 9));
                     addRectangle4TableCell(start, end, "SB=row:" + i + ",col:" + col, config);
-                    if(i == table4Summary.size() - 1){
+                    if (i == table4Summary.size() - 1) {
                         summaryTableLastP = new Point((int) (xEnd + headerW + 3 + 3), (int) (Constant.rectangle.getHeight() - currentY + 9 + 2));
                     }
                 }
@@ -972,7 +969,7 @@ public class JanusHendersonSimu extends SimulatorBase {
                     Point start = new Point((int) (xEnd + 0), (int) (Constant.rectangle.getHeight() - currentY - 4));
                     Point end = new Point((int) (xEnd + headerW + 3), (int) (Constant.rectangle.getHeight() - currentY + 9));
                     addRectangle4TableCell(start, end, "DB=row:" + i + ",col:" + col, config);
-                    if(i == table4Detail.size() - 1){
+                    if (i == table4Detail.size() - 1) {
                         detailTableLastP = new Point((int) (xEnd + headerW + 3 + 3), (int) (Constant.rectangle.getHeight() - currentY + 9 + 2));
                     }
                 }

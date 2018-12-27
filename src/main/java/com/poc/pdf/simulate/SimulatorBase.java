@@ -10,6 +10,7 @@ import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.poc.pdf.model.*;
 import com.poc.pdf.util.FontUtil;
+import com.poc.pdf.util.PDFUtil;
 import com.poc.pdf.util.RandomUtil;
 import com.poc.pdf.util.TableUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,6 +30,8 @@ public class SimulatorBase {
     private static final Logger logger = Logger.getLogger(SimulatorBase.class);
 
     public static final NumberFormat numFmt = new DecimalFormat("###,###,###,###,###.##");
+
+    public static final int ORIGINAL_SCALE = 72;
 
     public static class BaseConfig {
         String dest;
@@ -92,6 +95,28 @@ public class SimulatorBase {
         canvas.moveTo(p1.getX(), p1.getY()).lineTo(p2.getX(), p2.getY());
     }
 
+    protected static float getPicWidth(BaseConfig config) {
+        String value = config.properties.getProperty("picture.width");
+        return NumberUtils.toFloat(value, -1);
+    }
+
+    protected static float getPicHeight(BaseConfig config) {
+        String value = config.properties.getProperty("picture.height");
+        return NumberUtils.toFloat(value, -1);
+    }
+
+    protected static float getScale(BaseConfig config) {
+        float picWidth = getPicWidth(config);
+        float picHeight = getPicHeight(config);
+        float pdfWidth = config.layoutWidth;
+        float pdfHeight = config.layoutHeight;
+        String value = config.properties.getProperty("picture.scale.large");
+        boolean largeScale = Boolean.valueOf(value);
+        float scaleW = picWidth / pdfWidth;
+        float scaleH = picHeight / pdfHeight;
+        return largeScale ? Math.max(scaleW, scaleH) : Math.min(scaleW, scaleH);
+    }
+
 
     protected static void insertImage(FileInfo imageInfo, Point startPoint, PdfCanvas canvas, float totalHeight, float imageWidth) throws MalformedURLException {
         ImageData image = ImageDataFactory.create(imageInfo.getFullpath());
@@ -135,7 +160,7 @@ public class SimulatorBase {
                         .setFontAndSize(baseFont, fontSize)
                         .setColor(config.markColor, true)
                         .setLeading(leading)
-                        .moveText(rectangle.getPoint1().getX()+2, config.layoutHeight - rectangle.getPoint1().getY());
+                        .moveText(rectangle.getPoint1().getX() + 2, config.layoutHeight - rectangle.getPoint1().getY());
                 String text = rectangle2Str(rectangle);
                 canvas.newlineShowText(text);
                 canvas.endText();
@@ -156,7 +181,7 @@ public class SimulatorBase {
         point.setX(point.getX() + leftOffsize);
     }
 
-    protected static String rectangle2Str(Rectangle rectangle){
+    protected static String rectangle2Str(Rectangle rectangle) {
         StringBuilder builder = new StringBuilder();
         builder.append("x1:").append(rectangle.getPoint1().getX()).append(",");
         builder.append("y1:").append(rectangle.getPoint1().getY()).append(",");
@@ -224,6 +249,7 @@ public class SimulatorBase {
     }
 
     protected static String generateXml(BaseConfig config, String filter, String fileName) {
+        float scale = getScale(config);
         String enter = TableUtil.Const.enter;
         StringBuilder builder = new StringBuilder();
         builder.append("<annotation>").append(enter);
@@ -233,8 +259,8 @@ public class SimulatorBase {
         builder.append(blank(4)).append("<name>HengTian</name>").append(enter);
         builder.append(blank(2)).append("</owner>").append(enter);
         builder.append(blank(2)).append("<size>").append(enter);
-        builder.append(blank(4)).append("<width>").append(config.layoutWidth).append("</width>").append(enter);
-        builder.append(blank(4)).append("<height>").append(config.layoutHeight).append("</height>").append(enter);
+        builder.append(blank(4)).append("<width>").append(round(config.layoutWidth * scale)).append("</width>").append(enter);
+        builder.append(blank(4)).append("<height>").append(round(config.layoutHeight * scale)).append("</height>").append(enter);
         builder.append(blank(4)).append("<depth>3</depth>").append(enter);
         builder.append(blank(2)).append("</size>").append(enter);
         builder.append(blank(2)).append("<segmented>0</segmented>").append(enter);
@@ -244,10 +270,10 @@ public class SimulatorBase {
                 builder.append(blank(4)).append("<name>cell</name>").append(enter);
                 builder.append(blank(4)).append("<difficult>0</difficult>").append(enter);
                 builder.append(blank(4)).append("<bndbox>").append(enter);
-                builder.append(blank(4)).append("<xmin>").append(rectangle.getPoint1().getX()).append("</xmin>").append(enter);
-                builder.append(blank(4)).append("<ymin>").append(rectangle.getPoint1().getY()).append("</ymin>").append(enter);
-                builder.append(blank(4)).append("<xmax>").append(rectangle.getPoint2().getX()).append("</xmax>").append(enter);
-                builder.append(blank(4)).append("<ymax>").append(rectangle.getPoint2().getY()).append("</ymax>").append(enter);
+                builder.append(blank(4)).append("<xmin>").append(round(rectangle.getPoint1().getX() * scale)).append("</xmin>").append(enter);
+                builder.append(blank(4)).append("<ymin>").append(round(rectangle.getPoint1().getY() * scale)).append("</ymin>").append(enter);
+                builder.append(blank(4)).append("<xmax>").append(round(rectangle.getPoint2().getX() * scale)).append("</xmax>").append(enter);
+                builder.append(blank(4)).append("<ymax>").append(round(rectangle.getPoint2().getY() * scale)).append("</ymax>").append(enter);
                 builder.append(blank(4)).append("</bndbox>").append(enter);
                 builder.append(blank(2)).append("</object>").append(enter);
             } else {
@@ -256,6 +282,14 @@ public class SimulatorBase {
         }
         builder.append("</annotation>").append(enter);
         return builder.toString();
+    }
+
+    protected static void splitPdf2Jpg(String originalPdf, String output, BaseConfig config) {
+        PDFUtil.splitPdf2Jpg(originalPdf, output, ORIGINAL_SCALE * getScale(config));
+    }
+
+    private static int round(float value) {
+        return Math.round(value);
     }
 
     public static String blank(int size) {

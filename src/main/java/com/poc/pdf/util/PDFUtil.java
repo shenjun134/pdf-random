@@ -40,7 +40,7 @@ public class PDFUtil {
                 "-93549.53 -69912 20544.94 38824 eBE2Hk3C0 -15053.91";
     }
 
-    public static List<SubFile> splitPdf2Jpg(String originalFile, String storeTempPath, int dpi) {
+    public static List<SubFile> splitPdf2Jpg(String originalFile, String storeTempPath, float dpi) {
         if (!StringUtils.endsWith(originalFile, ".pdf")) {
             return null;
         }
@@ -64,7 +64,7 @@ public class PDFUtil {
                     tempName = dir.getAbsolutePath() + File.separator + tiffSrc + ".jpg";
                 }
                 BufferedImage bim = pdfRenderer.renderImageWithDPI(page, dpi, ImageType.RGB);
-                ImageIOUtil.writeImage(bim, tempName, dpi);
+                ImageIOUtil.writeImage(bim, tempName, (int) dpi);
 
                 SubFile subFile = new SubFile();
                 subFile.setName(tempName);
