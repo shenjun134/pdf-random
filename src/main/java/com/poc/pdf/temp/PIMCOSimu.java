@@ -101,6 +101,8 @@ public class PIMCOSimu extends SimulatorBase {
     private float FS_TABLE_1_TITLE = 10f;
     private float FS_TABLE_HEADER = 9f;
 
+    private float ZOOM_SCALE = 1;
+
     private String ALIGN_LEFT = "LEFT";
     private String ALIGN_RIGHT = "RIGHT";
 
@@ -113,6 +115,7 @@ public class PIMCOSimu extends SimulatorBase {
     private PageSize pageSize;
 
     private XmlResult table;
+    private XmlResult tableOutline;
     private XmlResult layout;
     private XmlResult signature;
 
@@ -166,11 +169,13 @@ public class PIMCOSimu extends SimulatorBase {
         String imageFileName = targetFolder + "/" + fileName + ".jpg";
         String layoutFileName = targetFolder + "/" + fileName + "-layout.xml";
         String tableFileName = targetFolder + "/" + fileName + "-table.xml";
+        String tableOutlineFileName = targetFolder + "/" + fileName + "-table-outline.xml";
         String signatureFileName = targetFolder + "/" + fileName + "-signature.xml";
 
         initial(pdfFileName);
 
         table = new XmlResult(targetFolder, fileName + "-table.xml", pageSize.getWidth(), pageSize.getHeight());
+        tableOutline = new XmlResult(targetFolder, fileName + "-table-outline.xml", pageSize.getWidth(), pageSize.getHeight());
         layout = new XmlResult(targetFolder, fileName + "-layout.xml", pageSize.getWidth(), pageSize.getHeight());
         signature = new XmlResult(targetFolder, fileName + "-signature.xml", pageSize.getWidth(), pageSize.getHeight());
 
@@ -188,11 +193,14 @@ public class PIMCOSimu extends SimulatorBase {
 
 //        BufferedImage image = new BufferedImage((int)pageSize.getWidth(), (int)pageSize.getHeight(), BufferedImage.TYPE_INT_RGB);
 //        renderer.renderPageToGraphics(0, (Graphics2D)image.getGraphics());
-        BufferedImage image = renderer.renderImage(0);
+        BufferedImage image = renderer.renderImage(0, 3);
         writeImage(image, new File(imageFileName));
 
         String output = toXml(table);
         FileUtils.write(new File(tableFileName), output);
+
+        output = toXml(tableOutline);
+        FileUtils.write(new File(tableOutlineFileName), output);
 
         output = toXml(layout);
         FileUtils.write(new File(layoutFileName), output);
@@ -293,6 +301,7 @@ public class PIMCOSimu extends SimulatorBase {
         drawTableBox(x, y, maxWidth, getLineHeight(HELVETICA_BOLD, FS_TABLE_1_TITLE));
 
         y -= HEIGHT_TABLE_2_TITLE;
+        double startTableY = y - PADDING_BOX_BOTTOM;
 
         String groupName = randomText(50, 60);
         canvas.beginText()
@@ -455,6 +464,8 @@ public class PIMCOSimu extends SimulatorBase {
                 .moveTo(X_START, y)
                 .lineTo(X_END, y)
                 .stroke();
+
+        drawTableOutline(X_START, y, X_END-X_START, startTableY - y);
         return y - HEIGHT_TABLE2_SUMMARY;
     }
 
@@ -471,8 +482,9 @@ public class PIMCOSimu extends SimulatorBase {
         maxWidth = HELVETICA_BOLD.getWidth(reportDate, FS_TABLE_1_TITLE);
         drawTableBox(x, y, maxWidth, startY - y + getLineHeight(HELVETICA_BOLD, FS_TABLE_1_TITLE));
 
-
+        double startTableY = y - PADDING_BOX_BOTTOM;
         y -= HEIGHT_TABLE_TITLE_HEADER;
+
         canvas.setColor(COLOR_TABLE_HEADER, true)
                 .rectangle(X_START, y, X_END - X_START, HEIGHT_TABLE_HEADER)
                 .fill();
@@ -628,6 +640,8 @@ public class PIMCOSimu extends SimulatorBase {
                 .moveTo(X_START, y)
                 .lineTo(X_END, y)
                 .stroke();
+
+        drawTableOutline(X_START, y, X_END-X_START, startTableY - y);
         return y - HEIGHT_TABLE1_TABLE2;
     }
 
@@ -884,7 +898,8 @@ public class PIMCOSimu extends SimulatorBase {
         double xmax = x + w;
         double ymax = pageSize.getHeight() - y;
 
-        layout.addItem("cell", xmin, ymin, xmax, ymax);
+
+        addXmlItem(layout, "cell", xmin, ymin, xmax, ymax);
     }
 
     private void drawTableBox(double x, double y, double w, double h) {
@@ -907,7 +922,30 @@ public class PIMCOSimu extends SimulatorBase {
         double xmax = x + w;
         double ymax = pageSize.getHeight() - y;
 
-        table.addItem("cell", xmin, ymin, xmax, ymax);
+        addXmlItem(table, "cell", xmin, ymin, xmax, ymax);
+    }
+
+    private void drawTableOutline(double x, double y, double w, double h) {
+        x = x - PADDING_BOX_LEFT;
+        y = y - PADDING_BOX_BOTTOM;
+        w = PADDING_BOX_LEFT + PADDING_BOX_RIGHT + w;
+        h = PADDING_BOX_TOP + PADDING_BOX_BOTTOM + h;
+
+        if (isShowMarkRect()) {
+            canvas.setColor(Color.RED, false);
+            canvas.setLineWidth(0.5f);
+            canvas.setLineDash(BOX_LINE_DASH, BOX_LINE_DASH_PHASE);
+            canvas.rectangle(x, y, w, h);
+            canvas.stroke();
+            canvas.setColor(COLOR_TEXT, true);
+        }
+
+        double xmin = x;
+        double ymin = pageSize.getHeight() - y - h;
+        double xmax = x + w;
+        double ymax = pageSize.getHeight() - y;
+
+        addXmlItem(tableOutline, "cell", xmin, ymin, xmax, ymax);
     }
 
     private void drawSignatureBox(double x, double y, double w, double h) {
@@ -926,7 +964,11 @@ public class PIMCOSimu extends SimulatorBase {
         double xmax = x + w;
         double ymax = pageSize.getHeight() - y;
 
-        signature.addItem("cell", xmin, ymin, xmax, ymax);
+        addXmlItem(signature, "cell", xmin, ymin, xmax, ymax);
+    }
+
+    private void addXmlItem(XmlResult result, String name, double xmin, double ymin, double xmax, double ymax) {
+        result.addItem(name, xmin * ZOOM_SCALE, ymin * ZOOM_SCALE, xmax * ZOOM_SCALE, ymax * ZOOM_SCALE);
     }
 
     // endregion
@@ -946,6 +988,21 @@ public class PIMCOSimu extends SimulatorBase {
         PdfPage page = doc.addNewPage(pageSize);
 
         canvas = new PdfCanvas(page);
+
+        String value = properties.getProperty("picture.width");
+        float picWidth = NumberUtils.toFloat(value, -1);
+
+        value = properties.getProperty("picture.height");
+        float picHeight = NumberUtils.toFloat(value, -1);
+
+        value = properties.getProperty("picture.scale.large");
+        boolean largeScale = Boolean.valueOf(value);
+
+        float pdfHeight = PageSize.A4.getHeight();
+        float pdfWidth = PageSize.A4.getWidth();
+        float scaleW = picWidth / pdfWidth;
+        float scaleH = picHeight / pdfHeight;
+        ZOOM_SCALE = largeScale ? Math.max(scaleW, scaleH) : Math.min(scaleW, scaleH);
 
         randomValue();
     }
