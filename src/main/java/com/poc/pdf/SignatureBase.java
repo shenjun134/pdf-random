@@ -4,6 +4,7 @@ import com.poc.pdf.base.FontTest;
 import com.poc.pdf.base.GridLines;
 import com.poc.pdf.base.NormalTableLines;
 import com.poc.pdf.base.TableLines;
+import com.poc.pdf.simulate.HumanLangSimu;
 import com.poc.pdf.simulate.JanusHendersonSimu;
 import com.poc.pdf.simulate.LazardTranSimu;
 import com.poc.pdf.simulate.PimcoSimu;
@@ -58,6 +59,11 @@ public class SignatureBase {
         if (StringUtils.equalsIgnoreCase("lazard-tan", type.trim())) {
             System.out.println("begin to print lazard-tan.pdf");
             new LazardTranSimu().process();
+            return;
+        }
+        if (StringUtils.equalsIgnoreCase("human-lang", type.trim())) {
+            System.out.println("begin to generate human-lang");
+            new HumanLangSimu().process();
             return;
         }
     }

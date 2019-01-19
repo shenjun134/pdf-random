@@ -142,6 +142,8 @@ public class JanusHendersonSimu extends SimulatorBase {
         process();
     }
 
+
+
     public static void process() {
         Long startAt = System.currentTimeMillis();
         try {
@@ -221,7 +223,7 @@ public class JanusHendersonSimu extends SimulatorBase {
     }
 
 
-    private static String randomFundNumber() {
+    public static String randomFundNumber() {
         //xxxxx xxxxxx Australia Ltd (Acf lbfs Re Ams Balanaced Fund)
         String pattern = "{0} {1} {2} Ltd ({3} {4} {5} {6} {7} Fund)";
         String corpaction1 = RandomUtil.randomStrOnly(5, 3);
@@ -264,7 +266,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         param1 = RandomUtil.uppcaseFirst(param1);
         String param2 = RandomStringUtils.random(5, true, false);
         param2 = RandomUtil.uppcaseFirst(param2);
-        return StringUtils.join(new String[]{fund, param1, param2, "Fund" }, " ");
+        return StringUtils.join(new String[]{fund, param1, param2, "Fund"}, " ");
     }
 
     private static void drawBaseLine(PdfCanvas canvas, Config config) {
@@ -464,10 +466,12 @@ public class JanusHendersonSimu extends SimulatorBase {
         int topX = config.headerStart.getX();
         float topY = Constant.rectangle.getHeight() - tableEnd;
 
-        List<String> list = new ArrayList<>();
-        list.add("Distribution Amount: " + config.netAmount);
-        list.add(MessageFormat.format("{0} of your distribution re-invested into {1} units in the {2}", config.netAmount, config.unit, config.fundStr));
-        list.add(MessageFormat.format("at {0} effective on {1}.", config.unitPrice, Constant.fmtshort.format(config.payDate)));
+//        List<String> list = new ArrayList<>();
+//        list.add("Distribution Amount: " + config.netAmount);
+//        list.add(MessageFormat.format("{0} of your distribution re-invested into {1} units in the {2}", config.netAmount, config.unit, config.fundStr));
+//        list.add(MessageFormat.format("at {0} effective on {1}.", config.unitPrice, Constant.fmtshort.format(config.payDate)));
+
+        List<String> list = generateHumanLang(config);
 
         List<String> list2 = new ArrayList<>();
         list2.add("If you have any questions about your investment, please contact your financial adviser, or call us on");
@@ -486,9 +490,11 @@ public class JanusHendersonSimu extends SimulatorBase {
 
 
         float currentTopY = topY;
+        int seq = 0;
         for (List<String> rows : ct) {
+            seq++;
             float maxRowWidth = 0;
-            Point start = new Point((int) (config.headerStart.getX() - 1), (int) ((Constant.rectangle.getHeight() - currentTopY - 2)));
+            Point start = new Point((int) (config.headerStart.getX() - 1), (int) ((Constant.rectangle.getHeight() - currentTopY - 4)));
             for (String row : rows) {
                 canvas.beginText()
                         .setFontAndSize(baseFont, fontSize)
@@ -503,13 +509,105 @@ public class JanusHendersonSimu extends SimulatorBase {
                     maxRowWidth = tempW;
                 }
             }
-            Point end = new Point((int) (config.headerStart.getX() + maxRowWidth + 1), (int) (Constant.rectangle.getHeight() - currentTopY - 2));
+            Point end = new Point((int) (config.headerStart.getX() + maxRowWidth + 3), (int) (Constant.rectangle.getHeight() - currentTopY - 2));
             addRectangle4Layout(start, end, "Footer Text", config);
+            if (seq == 1) {
+                addRectangle4HumanLng(start, end, "Footer Text", config);
+            }
             currentTopY = currentTopY - 12;
         }
         canvas.endText();
 
         return currentTopY;
+    }
+
+    private static List<String> generateHumanLang(Config config) throws IOException {
+        PdfFont baseFont = FontUtil.createFont(FontConstants.HELVETICA);
+        int fontSize = 10;
+        int maxLine = 495;
+        List<String> list = new ArrayList<>();
+//        list.add("Distribution Amount: " + config.netAmount);
+//        list.add(MessageFormat.format("{0} of your distribution re-invested into {1} units in the {2}", config.netAmount, config.unit, config.fundStr));
+//        list.add(MessageFormat.format("at {0} effective on {1}.", config.unitPrice, Constant.fmtshort.format(config.payDate)));
+        String temp = template();
+        temp = StringUtils.replace(temp, "#netAmount#", config.netAmount);
+        temp = StringUtils.replace(temp, "#units#", config.unit);
+        temp = StringUtils.replace(temp, "#fund#", config.fundStr);
+        temp = StringUtils.replace(temp, "#price#", config.unitPrice);
+        temp = StringUtils.replace(temp, "#payDate#", Constant.fmtshort.format(config.payDate));
+        String[] arr = temp.split("\n");
+        for (String line : arr) {
+            float width = baseFont.getWidth(line, fontSize);
+            if (width < maxLine) {
+                list.add(line);
+                continue;
+            }
+            list.addAll(splitLine(line, maxLine, baseFont, fontSize));
+        }
+        return list;
+    }
+    public static List<String> splitLine(String temp) throws IOException {
+        PdfFont baseFont = FontUtil.createFont(FontConstants.HELVETICA);
+        int fontSize = 10;
+        int maxLine = 495;
+        List<String> list = new ArrayList<>();
+        String[] arr = temp.split( "#enter#");
+        for (String line : arr) {
+            float width = baseFont.getWidth(line, fontSize);
+            if (width < maxLine) {
+                list.add(line);
+                continue;
+            }
+            list.addAll(splitLine(line, maxLine, baseFont, fontSize));
+        }
+        return list;
+    }
+
+    private static List<String> splitLine(String text, int maxLine, PdfFont baseFont, int fontSize) {
+        List<String> list = new ArrayList<>();
+        StringBuilder temp = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i++) {
+            float currentLength = baseFont.getWidth(temp.toString(), fontSize);
+            if (currentLength < maxLine) {
+                temp.append(text.charAt(i));
+            } else {
+                String tempStr = temp.toString();
+                int lastEmpty = tempStr.lastIndexOf(" ");
+                String matchedText = tempStr.substring(0, lastEmpty + 1);
+                String rest = tempStr.substring(lastEmpty + 1);
+                list.add(matchedText);
+                temp = new StringBuilder();
+                temp.append(rest);
+                temp.append(text.charAt(i));
+                //rollback to last
+            }
+            if (i == text.length() - 1) {
+                list.add(temp.toString());
+                //END of loop
+            }
+        }
+        return list;
+    }
+
+    private static String template() {
+        //int lineWidth = 495;
+        String[] coll = new String[]{
+                "Distribution Amount: #netAmount#\n#netAmount# of your distribution re-invested into #units# units in the #fund# at #price# effective on #payDate#.",
+                "Distribution Amount: #netAmount#\n#netAmount# of your distribution re-invested into #units# units in the #fund# at #price#. Your reinvestment of units has been applied for #payDate#.",
+                "Distribution Amount: #netAmount#\n#netAmount# of your distribution re-invested into #units# units in the #fund# at #price#. Your reinvestment of units will be applied for #payDate#.",
+                "Your distribution #netAmount# will be re-invested into #units# units in the #fund# at #price#, and your re-investment of units will be applied for #payDate#.",
+                "Your distribution re-investment will applied on be #payDate#; #netAmount# will invest #units# units in the #fund# at #price#.",
+                "Your distribution #netAmount# will be re-invested in #fund# with #units# units in the #fund# at #price#, and this reinvestment will be applied on #payDate# .",
+                "#netAmount# distribution re-invested in #fund# with #units# units at #price#. This reinvestment will be applied on #payDate# .",
+                "#netAmount# distribution will be re-invested into #units# units in the #fund# at #price#, which will be effective on #payDate# .",
+                "#netAmount# distribution will be invested #units# units in the #fund# at #price#. Your distribution re-investment will be effective on #payDate# .",
+                "Distribution amount is #netAmount#. This amount will be-invested into #units# units in the #fund# at #price# on #payDate# .",
+                "Distribution amount is #netAmount#. This amount will be-invested in the #fund# in #units# units at #price# on #payDate# .",
+        };
+        int rd = RandomUtil.randomInt(coll.length - 1, 0);
+        String temp = coll[rd];
+        return temp;
     }
 
     private static void insertRightTop1(PdfCanvas canvas, Config config) throws IOException {
@@ -523,10 +621,10 @@ public class JanusHendersonSimu extends SimulatorBase {
 
         LinkedHashMap<String, String[]> tagValue = new LinkedHashMap<>();
         tagValue.put("Enquiries: 1300 019 633 or +61 3 9445 5067", null);
-        tagValue.put("Mail:", new String[]{"GPO Box 804", "Melbourne VIC 3001" });
-        tagValue.put("Fax:", new String[]{"1800 238 910" });
-        tagValue.put("Web:", new String[]{"www.janushenderson.com/australia" });
-        tagValue.put("Email:", new String[]{"clientservices.aus@janushenderson.com" });
+        tagValue.put("Mail:", new String[]{"GPO Box 804", "Melbourne VIC 3001"});
+        tagValue.put("Fax:", new String[]{"1800 238 910"});
+        tagValue.put("Web:", new String[]{"www.janushenderson.com/australia"});
+        tagValue.put("Email:", new String[]{"clientservices.aus@janushenderson.com"});
 
         List<String> endList = new ArrayList<>();
         endList.add("Janus Henderson Investors (Australia)");
@@ -592,7 +690,7 @@ public class JanusHendersonSimu extends SimulatorBase {
         int topX = config.top2Start.getX();
         float topY = Constant.rectangle.getHeight() - config.top2Start.getY();
         LinkedHashMap<String, String[]> tagValue = new LinkedHashMap<>();
-        tagValue.put("Page", new String[]{"1 of 1" });
+        tagValue.put("Page", new String[]{"1 of 1"});
         tagValue.put("Date", new String[]{Constant.fmtFull.format(config.tradeDate)});
         String fundNumber = config.accountName;
         List<String> fundList = new ArrayList<>();
@@ -617,8 +715,8 @@ public class JanusHendersonSimu extends SimulatorBase {
 //        tagValue.put("Investor name", new String[]{"State Street Australia Ltd (Acf Ibfs Re", "Ams Balanced Fund)"});
         tagValue.put("Investor name", fundList.toArray(new String[]{}));
         tagValue.put("Investor number", new String[]{config.accountNumber});
-        tagValue.put("TFN/ABN status", new String[]{"Supplied" });
-        tagValue.put("Financial adviser", new String[]{"FMD", "C/- Janus Henderson", " VIC" });
+        tagValue.put("TFN/ABN status", new String[]{"Supplied"});
+        tagValue.put("Financial adviser", new String[]{"FMD", "C/- Janus Henderson", " VIC"});
         float tagBottom = 5f;
         float currentY = topY;
         float tagHeight = 12f;

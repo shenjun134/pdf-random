@@ -1,0 +1,14 @@
+Distribution Amount: #netAmount# #enter# #netAmount# of your distribution re-invested into #units# units in the #fund# at #price# effective on #payDate# .
+Distribution Amount: #netAmount# #enter# #netAmount# of your distribution re-invested into #units# units in the #fund# at #price#. Your reinvestment of units has been applied for #payDate# .
+Distribution Amount: #netAmount# #enter# #netAmount# of your distribution re-invested into #units# units in the #fund# at #price#. Your reinvestment of units will be applied for #payDate# .
+Distribution Amount: #netAmount#\n#netAmount# of your distribution re-invested into #units# units in the #fund# at #price# effective on #payDate# .
+Distribution Amount: #netAmount#\n#netAmount# of your distribution re-invested into #units# units in the #fund# at #price#. Your reinvestment of units has been applied for #payDate# .
+Distribution Amount: #netAmount#\n#netAmount# of your distribution re-invested into #units# units in the #fund# at #price#. Your reinvestment of units will be applied for #payDate# .
+Your distribution #netAmount# will be re-invested into #units# units in the #fund# at #price#, and your re-investment of units will be applied for #payDate# .
+Your distribution re-investment will applied on be #payDate#; #netAmount# will invest #units# units in the #fund# at #price#.
+Your distribution #netAmount# will be re-invested in #fund# with #units# units in the #fund# at #price#, and this reinvestment will be applied on #payDate# .
+#netAmount# distribution re-invested in #fund# with #units# units at #price#. This reinvestment will be applied on #payDate# .
+#netAmount# distribution will be re-invested into #units# units in the #fund# at #price#, which will be effective on #payDate# .
+#netAmount# distribution will be invested #units# units in the #fund# at #price#. Your distribution re-investment will be effective on #payDate# .
+Distribution amount is #netAmount#. This amount will be-invested into #units# units in the #fund# at #price# on #payDate# .
+Distribution amount is #netAmount#. This amount will be-invested in the #fund# in #units# units at #price# on #payDate# .

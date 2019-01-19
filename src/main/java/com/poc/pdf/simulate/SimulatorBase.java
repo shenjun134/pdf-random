@@ -57,8 +57,11 @@ public class SimulatorBase {
     }
 
     public static Properties load() {
-        String userDir = System.getProperty("user.dir");
         String propName = "simulate-config.properties";
+        return load(propName);
+    }
+    public static Properties load(String propName) {
+        String userDir = System.getProperty("user.dir");
         Properties properties = new Properties();
         File file = new File(userDir + "/" + propName);
         InputStream fileInputStream = null;
@@ -176,6 +179,17 @@ public class SimulatorBase {
         return calendar.getTime();
     }
 
+    protected static String randomDateStr() {
+        Calendar calendar = Calendar.getInstance();
+        int days = RandomUtil.randomInt(365, 0) * (RandomUtil.randomBool() ? -1 : 1);
+        calendar.add(Calendar.DAY_OF_YEAR, days);
+        Date dt= calendar.getTime();
+        if(RandomUtil.randomBool()){
+            return JanusHendersonSimu.Constant.fmtFull.format(dt);
+        }
+        return JanusHendersonSimu.Constant.fmtshort.format(dt);
+    }
+
     protected static void setOffsize(Point point, int topOffsize, int leftOffsize) {
         point.setY(point.getY() + topOffsize);
         point.setX(point.getX() + leftOffsize);
@@ -246,6 +260,11 @@ public class SimulatorBase {
     protected static void addRectangle4Layout(Point start, Point end, String name, BaseConfig config) {
         Rectangle rectangle = addRectangle(start, end, name, config);
         rectangle.setName("LAYOUT:" + rectangle.getName());
+    }
+
+    protected static void addRectangle4HumanLng(Point start, Point end, String name, BaseConfig config) {
+        Rectangle rectangle = addRectangle(start, end, name, config);
+        rectangle.setName("HUMAN-LANG:" + rectangle.getName());
     }
 
     protected static String generateXml(BaseConfig config, String filter, String fileName) {
